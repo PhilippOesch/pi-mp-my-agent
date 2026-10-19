@@ -10,49 +10,21 @@
  * correct for that point in history.
  */
 
-import { StringEnum } from "@earendil-works/pi-ai";
 import type {
-    AgentToolResult,
-    AgentToolUpdateCallback,
     ExtensionAPI,
     ExtensionContext,
-    ExtensionToolContext,
     Theme,
-    ToolRenderResultOptions,
-    // ToolRenderContext
 } from "@earendil-works/pi-coding-agent";
+import { matchesKey, Text, truncateToWidth } from "@earendil-works/pi-tui";
+import { createTodoHandlers, createTodoManager } from "./todo/handlers.ts";
 import {
-    Component,
-    matchesKey,
-    Text,
-    truncateToWidth,
-} from "@earendil-works/pi-tui";
-import { Type } from "typebox";
-
-interface Todo {
-    id: number;
-    text: string;
-    done: boolean;
-}
-
-const actions = ["list", "add", "toggle", "clear"] as const;
-
-type Actions = (typeof actions)[number];
-
-interface TodoDetails {
-    action: Actions;
-    todos: Todo[];
-    nextId: number;
-    error?: string;
-}
-
-const TodoParams = Type.Object({
-    action: StringEnum(actions),
-    text: Type.Optional(Type.String({ description: "Todo text (for add)" })),
-    id: Type.Optional(Type.Number({ description: "Todo ID (for toggle)" })),
-});
-
-type TodoParamsType = typeof TodoParams;
+    type Actions,
+    type TodoActionHandler,
+    type TodoDetails,
+    type TodoHandlerMap,
+    type TodoManager,
+    TodoParams,
+} from "./todo/types.ts";
 
 /**
  * UI component for the /todos command
@@ -143,60 +115,25 @@ class TodoListComponent {
     }
 }
 
-type TodoManagerState = {
-    todos: Todo[];
-    nextId: number;
-};
-
-type TodoManager = {
-    reset: (resetState?: TodoManagerState) => void;
-    list: () => Todo[];
-    count: () => number;
-    currentId: () => number;
-    incrementId: () => number;
-    add: (todo: Todo) => void;
-};
-
-function createTodoManager(): TodoManager {
-    const state: TodoManagerState = { todos: [], nextId: 0 };
-
-    const reset = (resetState?: TodoManagerState) => {
-        state.todos = resetState?.todos ?? [];
-        state.nextId = resetState?.nextId ?? 0;
-    };
-
-    const currentId = () => {
-        return state.nextId;
-    };
-
-    const incrementId = () => {
-        return state.nextId++;
-    };
-
-    const add = (todo: Todo) => {
-        state.todos.push(todo);
-    };
-
-    const list = () => {
-        return [...state.todos];
-    };
-
-    const count = () => {
-        return state.todos.length;
-    };
-
-    return {
-        count,
-        add,
-        reset,
-        list,
-        currentId,
-        incrementId,
-    };
-}
-
 export default function (pi: ExtensionAPI) {
-    let todos: TodoManager = createTodoManager();
+    const todos: TodoManager = createTodoManager();
+    const handlers: TodoHandlerMap = createTodoHandlers(todos);
+
+    /**
+     * Look up the handler for an action.
+     *
+     * The action is validated against the schema before `execute` runs, but
+     * `renderResult` dispatches on `details.action`, which comes from session
+     * data and may hold an unknown action. Fail with a readable message
+     * instead of a TypeError on `undefined`.
+     */
+    function getHandler<A extends Actions>(action: A): TodoActionHandler<A> {
+        const handler: TodoActionHandler<A> | undefined = handlers[action];
+        if (!handler) {
+            throw new Error(`Unknown todo action: ${action}`);
+        }
+        return handler;
+    }
 
     /**
      * Reconstruct state from session entries.
@@ -224,7 +161,7 @@ export default function (pi: ExtensionAPI) {
     pi.on("session_tree", async (_event, ctx) => reconstructState(ctx));
 
     // Register the todo tool for the LLM
-    pi.registerTool({
+    pi.registerTool<typeof TodoParams, TodoDetails>({
         name: "todo",
         label: "Todo",
         description:
@@ -232,149 +169,11 @@ export default function (pi: ExtensionAPI) {
         parameters: TodoParams,
 
         async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
-            switch (params.action) {
-                case "list":
-                    return {
-                        content: [
-                            {
-                                type: "text",
-                                text: todos.count()
-                                    ? todos
-                                          .list()
-                                          .map(
-                                              (t) =>
-                                                  `[${t.done ? "x" : " "}] #${t.id}: ${t.text}`,
-                                          )
-                                          .join("\n")
-                                    : "No todos",
-                            },
-                        ],
-                        details: {
-                            action: "list",
-                            todos: todos.list(),
-                            nextId: todos.currentId(),
-                        } as TodoDetails,
-                    };
-
-                case "add": {
-                    if (!params.text) {
-                        return {
-                            content: [
-                                {
-                                    type: "text",
-                                    text: "Error: text required for add",
-                                },
-                            ],
-                            details: {
-                                action: "add",
-                                todos: todos.list(),
-                                nextId: todos.currentId(),
-                                error: "text required",
-                            } as TodoDetails,
-                        };
-                    }
-                    const newTodo: Todo = {
-                        id: todos.incrementId(),
-                        text: params.text,
-                        done: false,
-                    };
-                    todos.add(newTodo);
-                    return {
-                        content: [
-                            {
-                                type: "text",
-                                text: `Added todo #${newTodo.id}: ${newTodo.text}`,
-                            },
-                        ],
-                        details: {
-                            action: "add",
-                            todos: todos.list(),
-                            nextId: todos.currentId(),
-                        } as TodoDetails,
-                    };
-                }
-
-                case "toggle": {
-                    if (params.id === undefined) {
-                        return {
-                            content: [
-                                {
-                                    type: "text",
-                                    text: "Error: id required for toggle",
-                                },
-                            ],
-                            details: {
-                                action: "toggle",
-                                todos: todos.list(),
-                                nextId: todos.currentId(),
-                                error: "id required",
-                            } as TodoDetails,
-                        };
-                    }
-                    const todo = todos.list().find((t) => t.id === params.id);
-                    if (!todo) {
-                        return {
-                            content: [
-                                {
-                                    type: "text",
-                                    text: `Todo #${params.id} not found`,
-                                },
-                            ],
-                            details: {
-                                action: "toggle",
-                                todos: todos.list(),
-                                nextId: todos.currentId(),
-                                error: `#${params.id} not found`,
-                            } as TodoDetails,
-                        };
-                    }
-                    todo.done = !todo.done;
-                    return {
-                        content: [
-                            {
-                                type: "text",
-                                text: `Todo #${todo.id} ${todo.done ? "completed" : "uncompleted"}`,
-                            },
-                        ],
-                        details: {
-                            action: "toggle",
-                            todos: todos.list(),
-                            nextId: todos.currentId(),
-                        } as TodoDetails,
-                    };
-                }
-
-                case "clear": {
-                    const count = todos.count();
-                    todos.reset();
-                    return {
-                        content: [
-                            { type: "text", text: `Cleared ${count} todos` },
-                        ],
-                        details: {
-                            action: "clear",
-                            todos: [],
-                            nextId: 1,
-                        } as TodoDetails,
-                    };
-                }
-
-                default:
-                    return {
-                        content: [
-                            {
-                                type: "text",
-                                text: `Unknown action: ${params.action}`,
-                            },
-                        ],
-                        details: {
-                            action: "list",
-                            todos: todos.list(),
-                            nextId: todos.currentId(),
-                            error: `unknown action: ${params.action}`,
-                        } as TodoDetails,
-                    };
-            }
+            const { text, details } = getHandler(params.action).execute(params);
+            return {
+                content: [{ type: "text", text }],
+                details: { ...details, action: params.action },
+            };
         },
 
         renderCall(args, theme, _context) {
@@ -387,7 +186,7 @@ export default function (pi: ExtensionAPI) {
             return new Text(text, 0, 0);
         },
 
-        renderResult(result, { expanded }, theme, _context) {
+        renderResult(result, options, theme, _context) {
             const details = result.details as TodoDetails | undefined;
             if (!details) {
                 const text = result.content[0];
@@ -402,63 +201,11 @@ export default function (pi: ExtensionAPI) {
                 );
             }
 
-            const todoList = details.todos;
-
-            switch (details.action) {
-                case "list": {
-                    if (todoList.length === 0) {
-                        return new Text(theme.fg("dim", "No todos"), 0, 0);
-                    }
-                    let listText = theme.fg(
-                        "muted",
-                        `${todoList.length} todo(s):`,
-                    );
-                    const display = expanded ? todoList : todoList.slice(0, 5);
-                    for (const t of display) {
-                        const check = t.done
-                            ? theme.fg("success", "✓")
-                            : theme.fg("dim", "○");
-                        const itemText = t.done
-                            ? theme.fg("dim", t.text)
-                            : theme.fg("muted", t.text);
-                        listText += `\n${check} ${theme.fg("accent", `#${t.id}`)} ${itemText}`;
-                    }
-                    if (!expanded && todoList.length > 5) {
-                        listText += `\n${theme.fg("dim", `... ${todoList.length - 5} more`)}`;
-                    }
-                    return new Text(listText, 0, 0);
-                }
-
-                case "add": {
-                    const added = todoList[todoList.length - 1];
-                    return new Text(
-                        theme.fg("success", "✓ Added ") +
-                            theme.fg("accent", `#${added.id}`) +
-                            " " +
-                            theme.fg("muted", added.text),
-                        0,
-                        0,
-                    );
-                }
-
-                case "toggle": {
-                    const text = result.content[0];
-                    const msg = text?.type === "text" ? text.text : "";
-                    return new Text(
-                        theme.fg("success", "✓ ") + theme.fg("muted", msg),
-                        0,
-                        0,
-                    );
-                }
-
-                case "clear":
-                    return new Text(
-                        theme.fg("success", "✓ ") +
-                            theme.fg("muted", "Cleared all todos"),
-                        0,
-                        0,
-                    );
-            }
+            return getHandler(details.action).renderResult(
+                result,
+                options,
+                theme,
+            );
         },
     });
 
