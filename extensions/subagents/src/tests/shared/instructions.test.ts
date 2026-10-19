@@ -3,7 +3,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import registerInstructions from "../../../../instructions.ts";
+import registerInstructions, { COPILOT_SKILL_PATHS } from "../../../../instructions.ts";
 
 function discoverSkills(cwd: string): string[] {
   const on = vi.fn();
@@ -24,16 +24,19 @@ describe("Copilot skills discovery", () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it("returns the repository skills directory from a nested cwd", () => {
+  it("returns both repository skills directories from a nested cwd", () => {
     const root = path.join(tempDir, "repo");
     const nested = path.join(root, "src", "module");
-    const skills = path.join(root, ".github", "skills");
+    const skills = COPILOT_SKILL_PATHS.map((relativePath) => path.join(root, relativePath));
     fs.mkdirSync(path.join(root, ".git"), { recursive: true });
     fs.mkdirSync(nested, { recursive: true });
-    fs.mkdirSync(skills, { recursive: true });
+    for (const skillsPath of skills) {
+      fs.mkdirSync(skillsPath, { recursive: true });
+    }
     fs.mkdirSync(path.join(nested, ".github", "skills"), { recursive: true });
+    fs.mkdirSync(path.join(nested, ".claude", "skills"), { recursive: true });
 
-    expect(discoverSkills(nested)).toEqual([skills]);
+    expect(discoverSkills(nested)).toEqual(skills);
   });
 
   it("supports a worktree .git file", () => {
@@ -45,15 +48,21 @@ describe("Copilot skills discovery", () => {
     expect(discoverSkills(root)).toEqual([skills]);
   });
 
-  it("does not return a missing or non-directory skills path", () => {
+  it("returns only existing directories when a skill path is missing or not a directory", () => {
     const root = path.join(tempDir, "repo");
-    const skills = path.join(root, ".github", "skills");
+    const githubSkills = path.join(root, ".github", "skills");
+    const claudeSkills = path.join(root, ".claude", "skills");
     fs.mkdirSync(path.join(root, ".git"), { recursive: true });
-    fs.mkdirSync(path.dirname(skills), { recursive: true });
 
     expect(discoverSkills(root)).toEqual([]);
-    fs.writeFileSync(skills, "not a directory");
-    expect(discoverSkills(root)).toEqual([]);
+    fs.mkdirSync(githubSkills, { recursive: true });
+    expect(discoverSkills(root)).toEqual([githubSkills]);
+    fs.mkdirSync(claudeSkills, { recursive: true });
+    fs.rmSync(githubSkills, { recursive: true });
+    expect(discoverSkills(root)).toEqual([claudeSkills]);
+    fs.mkdirSync(path.dirname(githubSkills), { recursive: true });
+    fs.writeFileSync(githubSkills, "not a directory");
+    expect(discoverSkills(root)).toEqual([claudeSkills]);
   });
 
   it("discovers skills in a non-git cwd", () => {

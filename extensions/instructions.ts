@@ -10,6 +10,8 @@ export const COPILOT_INSTRUCTION_PATHS = [
   ".github/copilot-instructions.md",
 ] as const;
 
+export const COPILOT_SKILL_PATHS = [".github/skills", ".claude/skills"] as const;
+
 function repositoryRoot(cwd: string): string {
   let directory = path.resolve(cwd);
   while (true) {
@@ -22,15 +24,17 @@ function repositoryRoot(cwd: string): string {
 
 export default function (pi: ExtensionAPI) {
   pi.on("resources_discover", (event) => {
-    const skillsPath = path.join(repositoryRoot(event.cwd), ".github", "skills");
-    try {
-      if (fs.statSync(skillsPath).isDirectory()) {
-        return { skillPaths: [skillsPath] };
+    const root = repositoryRoot(event.cwd);
+    const skillPaths = COPILOT_SKILL_PATHS.flatMap((relativePath) => {
+      const skillsPath = path.join(root, relativePath);
+      try {
+        return fs.statSync(skillsPath).isDirectory() ? [skillsPath] : [];
+      } catch {
+        // Copilot skills are optional.
+        return [];
       }
-    } catch {
-      // Copilot skills are optional.
-    }
-    return { skillPaths: [] };
+    });
+    return { skillPaths };
   });
 
   pi.on("before_agent_start", async (event, ctx) => {
