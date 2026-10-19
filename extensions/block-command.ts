@@ -1,6 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-const blockedCommands = ["az"];
+const blockedCommands = ["az", "sqlcmd"];
 const blockedCommandPattern = blockedCommands.length
   ? new RegExp(
       `(?<![\\w-])(?:${blockedCommands.map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})(?![\\w-])`,
