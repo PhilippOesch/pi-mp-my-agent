@@ -24,6 +24,7 @@
       "./extensions/instructions.ts",
       "./extensions/markdown-preview/index.ts",
       "./extensions/mcp-approval.ts",
+      "./extensions/memory/src/index.ts",
       "./extensions/path-blacklist/index.ts",
       "./extensions/read-mode-toggle/index.ts",
       "./extensions/subagents/src/index.ts",
