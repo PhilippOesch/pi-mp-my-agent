@@ -2,6 +2,10 @@
 
 Self-owned, dependency-free Pi extension replacing `pi-memory`. Provides long-term memory, scratchpad, daily logs, recoverable deletes, exit summaries, session handoff, and built-in search.
 
+## Credits
+
+Heavily inspired by [`pi-memory`](https://github.com/jayzeng/pi-memory) by Jay Zeng (MIT). This is an independent reimplementation: no qmd, no external processes, its own search stack, and env-configurable context limits. Some observable formats (entry markers, exit-summary prompt, injection guidance) stay compatible on purpose. See [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md).
+
 ## Migration from pi-memory
 
 1. Install this package in Pi.

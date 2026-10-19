@@ -2,6 +2,8 @@
 
 Long-term memory, scratchpad, daily logs, and recoverable deletes for Pi.
 
+Heavily inspired by [`pi-memory`](https://github.com/jayzeng/pi-memory) (MIT, © 2026 Jay Zeng). Independent reimplementation, but some on-disk markers and prompt text are kept verbatim for compatibility — see `THIRD_PARTY_NOTICES.md`.
+
 ## When you touch this code
 
 - **Dates, markers, entry splitting** → `src/storage/dates.ts`

@@ -1,14 +1,17 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadMemoryConfig } from "./config.ts";
 
 describe("config", () => {
-    afterEach(() => {
+    function clearMemoryEnv(): void {
         for (const key of Object.keys(process.env)) {
             if (key.startsWith("PI_MEMORY_")) {
                 delete process.env[key];
             }
         }
-    });
+    }
+
+    beforeEach(clearMemoryEnv);
+    afterEach(clearMemoryEnv);
 
     it("uses pi-memory defaults", () => {
         const cfg = loadMemoryConfig();
