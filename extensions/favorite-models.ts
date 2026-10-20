@@ -24,6 +24,7 @@
  *   ↑/↓ or Ctrl+N / Ctrl+P   Move selection
  *   Space                Toggle favorite on the selected row
  *   Enter                Switch to the selected model
+ *   Ctrl+S               Switch to the selected model and save it as the global default
  *   /                    Enter search mode and filter the list
  *   Esc / Ctrl+C         Cancel
  *
@@ -175,6 +176,22 @@ function saveFavorites(favorites: string[]): void {
 	writeFileSync(storageFilePath(), JSON.stringify(payload, null, 2) + "\n", "utf-8");
 }
 
+function saveDefaultModel(model: Model, ctx: ExtensionContext): void {
+	const path = join(getAgentDir(), "settings.json");
+	try {
+		let settings: Record<string, unknown> = {};
+		if (existsSync(path)) {
+			settings = JSON.parse(readFileSync(path, "utf-8")) as Record<string, unknown>;
+		}
+		settings.defaultProvider = model.provider;
+		settings.defaultModel = model.id;
+		writeFileSync(path, JSON.stringify(settings, null, 2) + "\n", "utf-8");
+	} catch (error) {
+		ctx.ui.notify(`Failed to save default model: ${String(error)}`, "error");
+		throw error;
+	}
+}
+
 function modelKey(model: Model): string {
 	return `${model.provider}/${model.id}`;
 }
@@ -235,7 +252,7 @@ function createSelector(
 	ctx: ExtensionContext,
 	allModels: readonly Model[],
 	favoriteList: string[],
-	onResult: (result: { kind: "select"; model: Model } | { kind: "cancel" }) => void,
+	onResult: (result: { kind: "select"; model: Model; persist?: boolean } | { kind: "cancel" }) => void,
 	onFavoriteChange: () => void,
 ): { render: (width: number) => string[]; invalidate: () => void; handleInput: (data: string) => void } {
 	const currentModel = ctx.model;
@@ -282,7 +299,7 @@ function createSelector(
 		if (searchMode) {
 			footer.setText("  Esc exit filter · Enter select");
 		} else {
-			footer.setText("  ↑/↓ or k/j move · / filter · Space favorite · Enter select · Esc cancel");
+			footer.setText("  ↑/↓ move · / filter · Space favorite · Enter select · Ctrl+S set default · Esc cancel");
 		}
 	}
 
@@ -480,6 +497,11 @@ function createSelector(
 			if (model) onResult({ kind: "select", model });
 			return;
 		}
+		if (matchesKey(data, Key.ctrl("s"))) {
+			const model = filteredModels[selectedIndex];
+			if (model) onResult({ kind: "select", model, persist: true });
+			return;
+		}
 		if (matchesKey(data, Key.escape) || data === "\x03" /* Ctrl+C */) {
 			onResult({ kind: "cancel" });
 			return;
@@ -535,6 +557,17 @@ async function openSelector(
 						finish(null);
 						return;
 					}
+					const key = modelKey(result.model);
+					if (result.persist) {
+						try {
+							saveDefaultModel(result.model, ctx);
+							ctx.ui.notify(`Switched to ${key} and saved it as the global default.`, "info");
+						} catch {
+							ctx.ui.notify(`Switched to ${key}, but failed to save it as default.`, "warning");
+						}
+					} else {
+						ctx.ui.notify(`Switched to ${key}.`, "info");
+					}
 					done(result.model);
 					finish(result.model);
 				},
@@ -583,8 +616,7 @@ export default function favoriteModelsExtension(pi: ExtensionAPI) {
 	});
 
 	async function runSelector(ctx: ExtensionContext): Promise<void> {
-		const picked = await openSelector(pi, ctx, favoriteList);
-		if (picked) ctx.ui.notify(`Switched to ${modelKey(picked)}.`, "info");
+		await openSelector(pi, ctx, favoriteList);
 	}
 
 	pi.registerCommand("fmodel", {
