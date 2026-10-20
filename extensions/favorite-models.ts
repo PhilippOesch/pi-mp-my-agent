@@ -176,7 +176,7 @@ function saveFavorites(favorites: string[]): void {
 	writeFileSync(storageFilePath(), JSON.stringify(payload, null, 2) + "\n", "utf-8");
 }
 
-function saveDefaultModel(model: Model, ctx: ExtensionContext): void {
+function saveDefaultModel(model: Model<Api>, ctx: ExtensionContext): void {
 	const path = join(getAgentDir(), "settings.json");
 	try {
 		let settings: Record<string, unknown> = {};
@@ -192,15 +192,15 @@ function saveDefaultModel(model: Model, ctx: ExtensionContext): void {
 	}
 }
 
-function modelKey(model: Model): string {
+function modelKey(model: Model<Api>): string {
 	return `${model.provider}/${model.id}`;
 }
 
-function isFavorite(favoriteSet: Set<string>, model: Model): boolean {
+function isFavorite(favoriteSet: Set<string>, model: Model<Api>): boolean {
 	return favoriteSet.has(modelKey(model));
 }
 
-function searchText(model: Pick<Model, "id" | "provider" | "name">): string {
+function searchText(model: Pick<Model<Api>, "id" | "provider" | "name">): string {
 	return `${model.id} ${model.provider} ${model.name} ${classify(model)}`;
 }
 
@@ -211,15 +211,15 @@ function searchText(model: Pick<Model, "id" | "provider" | "name">): string {
  *   3. Remaining models, sorted by provider then id
  */
 function buildDisplayModels(
-	allModels: readonly Model[],
+	allModels: readonly Model<Api>[],
 	favoriteSet: Set<string>,
-	currentModel: Model | undefined,
+	currentModel: Model<Api> | undefined,
 	favoriteList: readonly string[],
-): Model[] {
-	const byKey = new Map<string, Model>();
+): Model<Api>[] {
+	const byKey = new Map<string, Model<Api>>();
 	for (const model of allModels) byKey.set(modelKey(model), model);
 
-	const ordered: Model[] = [];
+	const ordered: Model<Api>[] = [];
 	const seen = new Set<string>();
 
 	for (const key of favoriteList) {
@@ -250,14 +250,14 @@ function buildDisplayModels(
 function createSelector(
 	tui: { requestRender: () => void },
 	ctx: ExtensionContext,
-	allModels: readonly Model[],
+	allModels: readonly Model<Api>[],
 	favoriteList: string[],
-	onResult: (result: { kind: "select"; model: Model; persist?: boolean } | { kind: "cancel" }) => void,
+	onResult: (result: { kind: "select"; model: Model<Api>; persist?: boolean } | { kind: "cancel" }) => void,
 	onFavoriteChange: () => void,
 ): { render: (width: number) => string[]; invalidate: () => void; handleInput: (data: string) => void } {
 	const currentModel = ctx.model;
 	const favoriteSet = new Set(favoriteList);
-	let displayModels: Model[] = buildDisplayModels(allModels, favoriteSet, currentModel, favoriteList);
+	let displayModels: Model<Api>[] = buildDisplayModels(allModels, favoriteSet, currentModel, favoriteList);
 
 	const container = new Container();
 	container.addChild(new DynamicBorder());
@@ -281,7 +281,7 @@ function createSelector(
 	container.addChild(new DynamicBorder());
 
 	let selectedIndex = 0;
-	let filteredModels: Model[] = displayModels;
+	let filteredModels: Model<Api>[] = displayModels;
 	let searchMode = false;
 
 	function rebuildDisplayModels(): void {
@@ -520,7 +520,7 @@ async function openSelector(
 	pi: ExtensionAPI,
 	ctx: ExtensionContext,
 	favoriteList: string[],
-): Promise<Model | null> {
+): Promise<Model<Api> | null> {
 	const allModels = ctx.modelRegistry.getAvailable();
 	if (allModels.length === 0) {
 		ctx.ui.notify("No available models. Run /login first.", "warning");
@@ -529,13 +529,13 @@ async function openSelector(
 
 	return new Promise((resolve) => {
 		let settled = false;
-		const finish = (value: Model | null) => {
+		const finish = (value: Model<Api> | null) => {
 			if (settled) return;
 			settled = true;
 			resolve(value);
 		};
 
-		void ctx.ui.custom<Model | null>((tui, _theme, _kb, done) => {
+		void ctx.ui.custom<Model<Api> | null>((tui, _theme, _kb, done) => {
 			return createSelector(
 				tui,
 				ctx,
