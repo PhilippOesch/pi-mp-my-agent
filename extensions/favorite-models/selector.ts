@@ -31,6 +31,12 @@ import { classify, colorTier, formatCost } from "./tiers.ts";
 /** How many model rows are shown at once. */
 const MAX_VISIBLE = 10;
 
+/** ANSI color escapes used in the selector list. */
+const SELECTOR_COLORS = {
+    selectedId: "\x1b[36m", // cyan
+    reset: "\x1b[0m",
+} as const;
+
 /** Outcome reported by the selector when it closes. */
 type SelectorResult =
     | { kind: "select"; model: Model<Api>; persist?: boolean }
@@ -143,7 +149,9 @@ function renderList(state: SelectorState): void {
         const favMark = isFav ? "★ " : "  ";
         const currentMark = isCurrent ? "✓ " : "  ";
         const tier = classify(model);
-        const idText = isSelected ? `\x1b[36m${model.id}\x1b[0m` : model.id;
+        const idText = isSelected
+            ? `${SELECTOR_COLORS.selectedId}${model.id}${SELECTOR_COLORS.reset}`
+            : model.id;
         const providerText = `[${model.provider}]`;
         const inputFormatted = formatCost(model.cost?.input);
         const outputFormatted = formatCost(model.cost?.output);
