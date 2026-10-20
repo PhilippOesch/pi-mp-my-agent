@@ -18,7 +18,7 @@
       "./extensions/block-command.ts",
       "./extensions/btw.ts",
       "./extensions/exit-command.ts",
-      "./extensions/favorite-models.ts",
+      "./extensions/favorite-models/index.ts",
       "./extensions/herdr-agent-state.ts",
       "./extensions/hidden-thinking-label.ts",
       "./extensions/instructions.ts",
