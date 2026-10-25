@@ -5,6 +5,9 @@
   "type": "module",
   "keywords": ["pi-package"],
   "private": true,
+  "scripts": {
+    "check:agents": "node scripts/check-agents.mjs"
+  },
   "files": [
     "extensions",
     "prompts",
