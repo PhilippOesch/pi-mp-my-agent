@@ -16,6 +16,16 @@ Or use a local copy during development:
 pi install ./path/to/pi-config
 ```
 
+## Required skills
+
+Some agents in this package expect skills from the companion skill collection:
+
+```bash
+pi install git:github.com/PhilippOesch/agent-skills
+```
+
+This makes skills such as `tdd`, `refactor`, `code-review`, `research`, `writing-for-agents`, and `ui-design` available to the subagents.
+
 ## Contents
 
 - `extensions/` — Pi extensions

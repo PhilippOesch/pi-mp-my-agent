@@ -2,6 +2,7 @@
 name: code-reviewer
 description: Code review specialist for quality and security analysis
 tools: read, grep, find, ls, bash
+skills: code-review, refactor
 models:
   - github-copilot/gpt-6.1-sol
   - opencode-go/kimi-k2.7-code

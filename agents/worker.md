@@ -2,6 +2,7 @@
 name: worker
 description: General-purpose subagent with full capabilities, isolated context
 requiresConfirmation: true
+skills: tdd, refactor
 models:
   - github-copilot/gpt-6-sol
   - opencode-go/kimi-k2.7-code
