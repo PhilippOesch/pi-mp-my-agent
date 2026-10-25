@@ -46,7 +46,10 @@ export function buildAwarenessSection(cwd: string): string | undefined {
     .map((a) => `- ${a.name} (${a.source}): ${a.description}`)
     .join("\n");
 
-  return ["You are the main agent! Delegate to this available list subagents with the subagent tool:", lines].join("\n");
+  return [
+    "You are the main agent. Delegate to these subagents with the subagent tool:",
+    lines,
+  ].join("\n");
 }
 
 export function registerAwareness(pi: ExtensionAPI): void {

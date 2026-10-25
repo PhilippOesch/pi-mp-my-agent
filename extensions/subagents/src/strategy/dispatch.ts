@@ -94,7 +94,10 @@ export class SubagentDispatch {
     return { outcome: "success", result };
   }
 
-  private mergeAgents(base: AgentConfig[], override: AgentConfig[]): AgentConfig[] {
+  private mergeAgents(
+    base: AgentConfig[],
+    override: AgentConfig[],
+  ): AgentConfig[] {
     const map = new Map<string, AgentConfig>();
     for (const agent of base) {
       map.set(agent.name, agent);

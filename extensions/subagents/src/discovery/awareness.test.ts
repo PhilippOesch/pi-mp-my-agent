@@ -46,11 +46,15 @@ describe("buildAwarenessSection", () => {
 
     const section = buildAwarenessSection("/tmp");
 
-    expect(section).toContain("Delegate to these with the subagent tool:");
+    expect(section).toContain(
+      "You are the main agent. Delegate to these subagents with the subagent tool:",
+    );
     expect(section).toContain("- writer (user): Writes prose");
     for (const agent of discoverPackageAgents()) {
       if (agent.name === "writer") continue;
-      expect(section).toContain(`- ${agent.name} (package): ${agent.description}`);
+      expect(section).toContain(
+        `- ${agent.name} (package): ${agent.description}`,
+      );
     }
   });
 
@@ -58,7 +62,9 @@ describe("buildAwarenessSection", () => {
     const section = buildAwarenessSection("/tmp");
     expect(section).toBeDefined();
     for (const agent of discoverPackageAgents()) {
-      expect(section).toContain(`- ${agent.name} (package): ${agent.description}`);
+      expect(section).toContain(
+        `- ${agent.name} (package): ${agent.description}`,
+      );
     }
   });
 });
