@@ -88,6 +88,7 @@ async function writePromptToTempFile(
 
 const SUBAGENT_SYSTEM_PROMPT = [
   "You are running as a Pi subagent, not the primary agent.",
+  "Focus on the delegated task. Do not delegate to other agents.",
   "The global AGENTS.md instructions to load i-have-adhd and caveman apply only to the primary agent; do not load either skill.",
 ].join(" ");
 

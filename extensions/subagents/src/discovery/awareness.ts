@@ -46,7 +46,7 @@ export function buildAwarenessSection(cwd: string): string | undefined {
     .map((a) => `- ${a.name} (${a.source}): ${a.description}`)
     .join("\n");
 
-  return ["Delegate to these with the subagent tool:", lines].join("\n");
+  return ["You are the main agent! Delegate to this available list subagents with the subagent tool:", lines].join("\n");
 }
 
 export function registerAwareness(pi: ExtensionAPI): void {
@@ -56,7 +56,7 @@ export function registerAwareness(pi: ExtensionAPI): void {
     if (!section) return undefined;
     // Mutate prompt sections instead of returning `systemPrompt`: Pi records
     // section deltas in the transcript, so the injection survives export/share.
-    event.systemPromptOptions.sections["subagents"] = section;
+    event.systemPromptOptions.sections["subagent_orchestration"] = section;
     return undefined;
   });
 }
