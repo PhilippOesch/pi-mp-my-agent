@@ -72,6 +72,7 @@ const makeFailure = (agent: string, reason: string): SingleResult => ({
 const stubContext = (): SubAgentToolContext => ({
   config: {
     cwd: "/tmp",
+    agentDir: "/tmp/agent",
     agentScope: "user",
     dispatchDefaults: {},
     agents: [],
@@ -80,6 +81,7 @@ const stubContext = (): SubAgentToolContext => ({
     confirmProjectAgents: false,
     mode: "single",
     requestedAgentNames: [],
+    projectTrusted: true,
   },
   details: {
     make: (results: SingleResult[]) =>

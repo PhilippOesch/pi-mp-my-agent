@@ -50,6 +50,7 @@ const makeAgent = (overrides: Partial<AgentConfig> = {}): AgentConfig => ({
 const makeCtx = (agents: AgentConfig[]): SubAgentToolContext => ({
   config: {
     cwd: "/tmp",
+    agentDir: "/tmp/agent",
     agentScope: "user",
     dispatchDefaults: {
       model: "default/provider",
@@ -65,6 +66,7 @@ const makeCtx = (agents: AgentConfig[]): SubAgentToolContext => ({
     confirmProjectAgents: false,
     mode: "single",
     requestedAgentNames: [],
+    projectTrusted: true,
   },
   details: {
     make: (results: SingleResult[]) =>
@@ -203,6 +205,29 @@ describe("AgentRunner", () => {
     const toolsIndex = request.args.indexOf("--tools");
     expect(toolsIndex).toBeGreaterThan(-1);
     expect(request.args[toolsIndex + 1]).toBe("read,bash");
+  });
+
+  it("pushes --skill for each declared skill", async () => {
+    adapter.events = [exitEvent(EXIT_CODE.SUCCESS)];
+    const agentDir = fs.mkdtempSync(path.join(os.tmpdir(), "agent-dir-"));
+    const skillDir = path.join(agentDir, "skills", "tdd");
+    fs.mkdirSync(skillDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(skillDir, "SKILL.md"),
+      "---\nname: tdd\ndescription: TDD skill\n---\nUse TDD.\n",
+      "utf-8",
+    );
+
+    const ctx = makeCtx([makeAgent({ skills: ["tdd"] })]);
+    ctx.config.agentDir = agentDir;
+    await runner.runAgent(ctx, "worker", "task");
+
+    const request = adapter.run.mock.calls[0]![0];
+    const skillIndex = request.args.indexOf("--skill");
+    expect(skillIndex).toBeGreaterThan(-1);
+    expect(request.args[skillIndex + 1]).toBe(path.join(skillDir, "SKILL.md"));
+
+    fs.rmSync(agentDir, { recursive: true, force: true });
   });
 
   it("appends the task as a positional argument", async () => {

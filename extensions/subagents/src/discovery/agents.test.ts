@@ -80,6 +80,44 @@ tools:
     expect(agents[0]?.tools).toEqual(["read", "bash"]);
   });
 
+  it("accepts skills as comma string", () => {
+    const agentsDir = path.join(tmpUserDir, "agents");
+    fs.mkdirSync(agentsDir);
+    makeAgentFile(
+      agentsDir,
+      "comma-skills",
+      `---
+name: comma-skills
+description: comma skills
+skills: tdd, refactor
+---
+`,
+    );
+
+    const { agents } = discoverAgents("/tmp", "user");
+    expect(agents[0]?.skills).toEqual(["tdd", "refactor"]);
+  });
+
+  it("accepts skills as YAML list", () => {
+    const agentsDir = path.join(tmpUserDir, "agents");
+    fs.mkdirSync(agentsDir);
+    makeAgentFile(
+      agentsDir,
+      "list-skills",
+      `---
+name: list-skills
+description: list skills
+skills:
+  - tdd
+  - refactor
+---
+`,
+    );
+
+    const { agents } = discoverAgents("/tmp", "user");
+    expect(agents[0]?.skills).toEqual(["tdd", "refactor"]);
+  });
+
   it("accepts models as bare scalar", () => {
     const agentsDir = path.join(tmpUserDir, "agents");
     fs.mkdirSync(agentsDir);

@@ -18,6 +18,7 @@ export interface AgentConfig {
   name: string;
   description: string;
   tools?: string[];
+  skills?: string[];
   model?: string;
   models?: string[];
   requiresConfirmation?: boolean;
@@ -43,6 +44,7 @@ type AgentFrontmatter = {
   name?: unknown;
   description?: unknown;
   tools?: unknown;
+  skills?: unknown;
   model?: unknown;
   models?: unknown;
   requiresConfirmation?: unknown;
@@ -71,6 +73,27 @@ function parseToolList(value: unknown): string[] | undefined {
     .map((t) => t.trim())
     .filter(Boolean);
   return tools.length > 0 ? tools : undefined;
+}
+
+/**
+ * Normalize a frontmatter `skills` value to a list of skill names.
+ *
+ * Mirrors `parseToolList`: both spellings are valid YAML.
+ *
+ *     skills: tdd, refactor        # string
+ *     skills: [tdd, refactor]      # array
+ */
+function parseSkillList(value: unknown): string[] | undefined {
+  const raw = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(",")
+      : [];
+  const skills = raw
+    .filter((s): s is string => typeof s === "string")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return skills.length > 0 ? skills : undefined;
 }
 
 /**
@@ -172,6 +195,7 @@ export function loadAgentsFromDir(
       name: frontmatter.name,
       description: frontmatter.description,
       tools: parseToolList(frontmatter.tools),
+      skills: parseSkillList(frontmatter.skills),
       model:
         typeof frontmatter.model === "string" ? frontmatter.model : undefined,
       models: parseModelList(frontmatter.models),
