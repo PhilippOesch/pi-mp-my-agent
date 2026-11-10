@@ -32,15 +32,34 @@ export function isFailedResult(result: SingleResult): boolean {
 }
 
 export function getResultOutput(result: SingleResult): string {
-  if (isFailedResult(result)) {
-    return (
-      result.errorMessage ||
-      result.stderr ||
-      getFinalOutput(result.messages) ||
-      "(no output)"
-    );
+  if (!isFailedResult(result)) {
+    return getFinalOutput(result.messages) || "(no output)";
   }
-  return getFinalOutput(result.messages) || "(no output)";
+
+  const diagnostics = [
+    result.exitCode >= 0 ? `exit code: ${result.exitCode}` : undefined,
+    result.exitSignal ? `signal: ${result.exitSignal}` : undefined,
+    result.stopReason ? `stopReason: ${result.stopReason}` : undefined,
+  ].filter(Boolean);
+  const lines = [
+    `Child failed${diagnostics.length ? ` (${diagnostics.join("; ")})` : ""}.`,
+  ];
+  if (result.errorMessage?.trim()) lines.push(`Error: ${result.errorMessage}`);
+  if (result.stderr?.trim() && result.stderr !== result.errorMessage) {
+    lines.push(`stderr: ${result.stderr}`);
+  }
+  if (result.reportPath && !result.diagnosticsError) {
+    lines.push(`Persisted report: ${result.reportPath}`);
+  }
+  const report = getFinalOutput(result.messages);
+  if (report.trim()) {
+    lines.push(
+      `PARTIAL/UNVERIFIED completed assistant text (verify consequential claims):\n${truncateParallelOutput(report)}`,
+    );
+  } else {
+    lines.push("No completed assistant text available.");
+  }
+  return lines.join("\n\n");
 }
 
 export function truncateParallelOutput(output: string): string {

@@ -1,6 +1,6 @@
 ---
 name: explorer
-description: Research subagent that investigates a topic using pi-web-access web search/fetch or the Context7 MCP, then returns a cited summary
+description: External web and library-documentation research using pi-web-access or Context7; returns a cited summary
 tools: web_search, fetch_content, get_search_content, source_check, context7_resolve_library_id, context7_query_docs, read, bash
 models:
   - github-copilot/gpt-6-luna

@@ -48,9 +48,22 @@ describe("buildAwarenessSection", () => {
 
     expect(section).toContain("Delegate to these with the subagent tool:");
     expect(section).toContain("- writer (user): Writes prose");
+    expect(section).toContain("specialist subagent over direct MCP calls");
+    expect(section).toContain("including initial lookups");
+    expect(section).toContain(
+      "no suitable specialist exists or to recover from failed delegation",
+    );
+    expect(section).toContain(
+      "verify consequential claims in PARTIAL/UNVERIFIED reports",
+    );
+    expect(section).toContain("complete read-only work directly");
+    expect(section).toContain("inspect working-tree changes first");
+    expect(section).toContain("honor user cancellation");
     for (const agent of discoverPackageAgents()) {
       if (agent.name === "writer") continue;
-      expect(section).toContain(`- ${agent.name} (package): ${agent.description}`);
+      expect(section).toContain(
+        `- ${agent.name} (package): ${agent.description}`,
+      );
     }
   });
 
@@ -58,7 +71,9 @@ describe("buildAwarenessSection", () => {
     const section = buildAwarenessSection("/tmp");
     expect(section).toBeDefined();
     for (const agent of discoverPackageAgents()) {
-      expect(section).toContain(`- ${agent.name} (package): ${agent.description}`);
+      expect(section).toContain(
+        `- ${agent.name} (package): ${agent.description}`,
+      );
     }
   });
 });

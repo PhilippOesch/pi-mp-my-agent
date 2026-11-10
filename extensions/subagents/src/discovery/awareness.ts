@@ -46,7 +46,12 @@ export function buildAwarenessSection(cwd: string): string | undefined {
     .map((a) => `- ${a.name} (${a.source}): ${a.description}`)
     .join("\n");
 
-  return ["Delegate to these with the subagent tool:", lines].join("\n");
+  return [
+    "Delegate to these with the subagent tool:",
+    lines,
+    "Prefer an available specialist subagent over direct MCP calls when it covers the task, including initial lookups. Use direct MCP when no suitable specialist exists or to recover from failed delegation.",
+    "On subagent failure, honor user cancellation. Otherwise recover without waiting for the user when possible: verify consequential claims in PARTIAL/UNVERIFIED reports; if no usable report, complete read-only work directly. For potentially write-capable work, inspect working-tree changes first. Do not retry the child automatically.",
+  ].join("\n");
 }
 
 export function registerAwareness(pi: ExtensionAPI): void {

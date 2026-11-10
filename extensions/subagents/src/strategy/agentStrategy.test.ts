@@ -51,7 +51,11 @@ const makeSuccess = (
     ...overrides,
   }) as SingleResult;
 
-const makeFailure = (agent: string, reason: string): SingleResult => ({
+const makeFailure = (
+  agent: string,
+  reason: string,
+  overrides: Partial<SingleResult> = {},
+): SingleResult => ({
   agent,
   agentSource: "user",
   task: "task",
@@ -67,6 +71,7 @@ const makeFailure = (agent: string, reason: string): SingleResult => ({
     contextTokens: 0,
     turns: 0,
   },
+  ...overrides,
 });
 
 const stubContext = (): SubAgentToolContext => ({
@@ -104,16 +109,24 @@ describe("strategies.single", () => {
     expect(result.terminate).toBe(false);
   });
 
-  it("marks failure without suppressing parent recovery", async () => {
-    vi.mocked(runAgent).mockResolvedValueOnce(makeFailure("a", "boom"));
+  it("marks opaque toolUse failure without suppressing parent recovery", async () => {
+    vi.mocked(runAgent).mockResolvedValueOnce(
+      makeFailure("a", "", {
+        stopReason: "toolUse",
+        reportPath: "/runs/a/report.md",
+      }),
+    );
     const result = await strategies.single(
       {} as Parameters<typeof strategies.single>[0],
       stubContext(),
       { kind: "single", agent: "a", task: "t" } as ClassifiedParams,
     );
-    expect((result.content[0] as { text: string }).text).toContain(
-      "Agent failed: boom",
+    const output = (result.content[0] as { text: string }).text;
+    expect(output).toContain(
+      "Agent failed: Child failed (exit code: 1; stopReason: toolUse)",
     );
+    expect(output).toContain("No completed assistant text available.");
+    expect(output).toContain("Persisted report: /runs/a/report.md");
     expect(result.terminate).toBe(false);
     expect(result.isError).toBe(true);
   });
@@ -158,10 +171,35 @@ describe("strategies.parallel", () => {
     );
   });
 
+  it("keeps failed report pointers visible when parallel output is capped", async () => {
+    vi.mocked(runAgent).mockResolvedValueOnce(
+      makeFailure("a", "", {
+        reportPath: "/runs/a/report.md",
+        messages: makeSuccess("a", "x".repeat(60_000)).messages,
+      }),
+    );
+    const result = await strategies.parallel(
+      {} as Parameters<typeof strategies.parallel>[0],
+      stubContext(),
+      { kind: "parallel", tasks: [{ agent: "a", task: "t" }] },
+    );
+    const output = (result.content[0] as { text: string }).text;
+    expect(output).toContain("Persisted report: /runs/a/report.md");
+    expect(output).toContain("bytes omitted");
+    expect(result.isError).toBe(true);
+  });
+
   it("summarizes parallel results", async () => {
     vi.mocked(runAgent)
       .mockResolvedValueOnce(makeSuccess("a", "ok"))
-      .mockResolvedValueOnce(makeFailure("b", "nope"));
+      .mockResolvedValueOnce(
+        makeFailure("b", "", {
+          stopReason: "error",
+          errorMessage: "Subagent exceeded 30s deadline",
+          messages: makeSuccess("b", "usable findings").messages,
+          reportPath: "/runs/b/report.md",
+        }),
+      );
     const result = await strategies.parallel(
       {} as Parameters<typeof strategies.parallel>[0],
       stubContext(),
@@ -177,6 +215,12 @@ describe("strategies.parallel", () => {
     expect(text).toContain("Parallel: 1/2 succeeded");
     expect(text).toContain("### [a] completed");
     expect(text).toContain("### [b] failed");
+    expect(text).toContain("Subagent exceeded 30s deadline");
+    expect(text).toContain("PARTIAL/UNVERIFIED completed assistant text");
+    expect(text).toContain("usable findings");
+    expect(text).toContain("Persisted report: /runs/b/report.md");
+    expect(result.isError).toBe(true);
+    expect(result.terminate).toBe(false);
   });
 });
 
@@ -236,7 +280,12 @@ describe("strategies.chain", () => {
   it("stops chain on first failure with an error result", async () => {
     vi.mocked(runAgent)
       .mockResolvedValueOnce(makeSuccess("a", "ok"))
-      .mockResolvedValueOnce(makeFailure("b", "bad"));
+      .mockResolvedValueOnce(
+        makeFailure("b", "bad", {
+          messages: makeSuccess("b", "partial handoff").messages,
+          reportPath: "/runs/b/report.md",
+        }),
+      );
     const result = await strategies.chain(
       {} as Parameters<typeof strategies.chain>[0],
       stubContext(),
@@ -249,9 +298,11 @@ describe("strategies.chain", () => {
       } as ClassifiedParams,
     );
     expect(runAgent).toHaveBeenCalledTimes(2);
-    expect((result.content[0] as { text: string }).text).toContain(
-      "Chain stopped at step 2 (b)",
-    );
+    const output = (result.content[0] as { text: string }).text;
+    expect(output).toContain("Chain stopped at step 2 (b)");
+    expect(output).toContain("PARTIAL/UNVERIFIED completed assistant text");
+    expect(output).toContain("partial handoff");
+    expect(output).toContain("Persisted report: /runs/b/report.md");
     expect(result.terminate).toBe(false);
     expect(result.isError).toBe(true);
   });

@@ -86,7 +86,7 @@ const runSingle: StrategyFn = async (
     const errorMsg = getResultOutput(result);
     return createTextResult(
       subAgentContext,
-      `Agent ${result.stopReason || "failed"}: ${errorMsg}`,
+      `Agent failed: ${errorMsg}`,
       [result],
       false,
       true,

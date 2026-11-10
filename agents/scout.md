@@ -1,6 +1,6 @@
 ---
 name: scout
-description: Fast codebase recon that returns compressed context for handoff to other agents
+description: Fast local codebase reconnaissance that returns compressed file and code context for handoff to other agents
 tools: read, grep, find, ls, bash
 models:
   - github-copilot/gpt-6-luna

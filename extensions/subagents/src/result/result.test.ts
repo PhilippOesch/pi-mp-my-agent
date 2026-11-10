@@ -117,37 +117,71 @@ describe("getResultOutput", () => {
     expect(getResultOutput(result)).toBe("done");
   });
 
-  it("returns errorMessage on failure", () => {
+  it("reports an opaque nonzero exit with toolUse and no stderr without inventing a cause", () => {
     const result = {
       exitCode: EXIT_CODE.FAILED,
-      messages: [makeMessage("assistant", "output")],
-      errorMessage: "oops",
-      stderr: "stderr",
-    } as SingleResult;
-    expect(getResultOutput(result)).toBe("oops");
+      stopReason: "toolUse",
+      messages: [],
+      stderr: "",
+      reportPath: "/runs/report.md",
+    } as unknown as SingleResult;
+    const output = getResultOutput(result);
+    expect(output).toContain("exit code: 1; stopReason: toolUse");
+    expect(output).toContain("No completed assistant text available.");
+    expect(output).toContain("Persisted report: /runs/report.md");
+    expect(output).not.toContain("timeout");
   });
 
-  it("falls back to stderr then final output then placeholder", () => {
-    const noErrorMessage = {
+  it("keeps a completed assistant report on timeout alongside reason and signal", () => {
+    const result = {
+      exitCode: EXIT_CODE.FAILED,
+      exitSignal: "SIGTERM",
+      stopReason: "error",
+      errorMessage: "Subagent exceeded 30s deadline",
+      messages: [makeMessage("assistant", "usable findings")],
+      stderr: "diagnostic tail",
+      reportPath: "/runs/report.md",
+    } as SingleResult;
+    const output = getResultOutput(result);
+    expect(output).toContain(
+      "exit code: 1; signal: SIGTERM; stopReason: error",
+    );
+    expect(output).toContain("Error: Subagent exceeded 30s deadline");
+    expect(output).toContain("stderr: diagnostic tail");
+    expect(output).toContain("PARTIAL/UNVERIFIED completed assistant text");
+    expect(output).toContain("usable findings");
+    expect(output).toContain("Persisted report: /runs/report.md");
+  });
+
+  it("caps large failed reports and keeps the report pointer ahead of truncated content", () => {
+    const result = {
+      exitCode: EXIT_CODE.FAILED,
+      messages: [
+        makeMessage("assistant", "x".repeat(PER_TASK_OUTPUT_CAP + 100)),
+      ],
+      stderr: "",
+      reportPath: "/runs/report.md",
+    } as SingleResult;
+    const output = getResultOutput(result);
+    expect(output).toContain(
+      "bytes omitted. Full output preserved in tool details.",
+    );
+    expect(output.indexOf("Persisted report: /runs/report.md")).toBeLessThan(
+      output.indexOf("PARTIAL/UNVERIFIED"),
+    );
+  });
+
+  it("does not claim a report was persisted when diagnostics failed", () => {
+    const result = {
       exitCode: EXIT_CODE.FAILED,
       messages: [],
       stderr: "stderr text",
+      reportPath: "/runs/report.md",
+      diagnosticsError: "disk unavailable",
     } as unknown as SingleResult;
-    expect(getResultOutput(noErrorMessage)).toBe("stderr text");
-
-    const noStderr = {
-      exitCode: EXIT_CODE.FAILED,
-      messages: [makeMessage("assistant", "msg")],
-      stderr: "",
-    } as unknown as SingleResult;
-    expect(getResultOutput(noStderr)).toBe("msg");
-
-    const nothing = {
-      exitCode: EXIT_CODE.FAILED,
-      messages: [],
-      stderr: "",
-    } as unknown as SingleResult;
-    expect(getResultOutput(nothing)).toBe("(no output)");
+    const output = getResultOutput(result);
+    expect(output).toContain("stderr: stderr text");
+    expect(output).not.toContain("Persisted report:");
   });
 });
 
