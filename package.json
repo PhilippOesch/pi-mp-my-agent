@@ -11,7 +11,20 @@
         "extensions/subagents"
     ],
     "scripts": {
-        "check:agents": "node scripts/check-agents.mjs"
+        "check:agents": "node scripts/check-agents.mjs",
+        "typecheck": "npm run typecheck:subagents && npm run typecheck:memory",
+        "typecheck:subagents": "cd extensions/subagents && npm run typecheck",
+        "typecheck:memory": "cd extensions/memory && npm run typecheck",
+        "lint": "npm run lint:subagents && npm run lint:memory",
+        "lint:subagents": "cd extensions/subagents && npm run lint",
+        "lint:memory": "cd extensions/memory && npm run lint",
+        "format:check": "npx prettier --check extensions/subagents extensions/memory extensions/shared",
+        "format": "npx prettier --write extensions/subagents extensions/memory extensions/shared",
+        "test": "cd extensions/subagents && npm test",
+        "circular": "npm run circular:subagents && npm run circular:memory",
+        "circular:subagents": "cd extensions/subagents && npm run circular",
+        "circular:memory": "cd extensions/memory && npm run circular",
+        "check": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run circular"
     },
     "files": [
         "extensions",
