@@ -47,6 +47,21 @@ personal Pi config (e.g. `~/.pi/agent/`) add the package:
 Create your own `settings.json`, `keybindings.json`, `blacklist.json`, and
 `mcp.json` in `~/.pi/agent/` as needed.
 
+`pi-mp-my-agent.config.json` in `~/.pi/agent/` is optional and can be used to
+configure package-wide behavior. For example, enable only a subset of agents:
+
+```json
+{
+  "agents": {
+    "whitelist": ["code-reviewer", "worker"]
+  }
+}
+```
+
+If `agents.whitelist` is empty or omitted, all agents from this package are
+enabled. Agent names correspond to the file names in the `agents/` directory
+(without the `.md` extension).
+
 `mcp.json`, `auth.json`, `trust.json`, `models-store.json`, `memory/`, and
 `sessions/` are generated at runtime and are not tracked.
 
