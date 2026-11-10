@@ -13,6 +13,7 @@
  *
  * Usage:
  *   - `/mode` toggles between save and yolo mode.
+ *   - `Ctrl+Tab` toggles between save and yolo mode.
  *   - The active mode is always shown in the TUI footer.
  *   - A one-sentence mode note is appended to the system prompt on every
  *     agent turn via `before_agent_start`.
@@ -85,14 +86,13 @@ export default function readModeToggleExtension(pi: ExtensionAPI): void {
     },
   });
 
-  //TODO: fix the control
-  // pi.registerShortcut(Key.("m"), {
-  //   description: "Toggle between save mode and yolo mode",
-  //   handler: (ctx) => {
-  //     if (!ctx.hasUI) return;
-  //     toggle(ctx);
-  //   },
-  // });
+  pi.registerShortcut(Key.ctrl("tab"), {
+    description: "Toggle between save mode and yolo mode",
+    handler: (ctx) => {
+      if (!ctx.hasUI) return;
+      toggle(ctx);
+    },
+  });
 
   // Restore the persisted mode on every session start (startup, reload, new,
   // resume, fork). We scan the current branch so tree navigation reflects the
