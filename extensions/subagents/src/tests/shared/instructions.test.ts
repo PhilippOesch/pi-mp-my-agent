@@ -3,14 +3,20 @@ import * as os from "node:os";
 import * as path from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import registerInstructions, { COPILOT_SKILL_PATHS } from "../../../../instructions.ts";
+import registerInstructions, {
+  COPILOT_SKILL_PATHS,
+  isSkillsDisabled,
+} from "../../../../instructions.ts";
 
 function discoverSkills(cwd: string): string[] {
   const on = vi.fn();
   registerInstructions({ on } as unknown as ExtensionAPI);
-  const handler = on.mock.calls.find(([event]) => event === "resources_discover")?.[1];
+  const handler = on.mock.calls.find(
+    ([event]) => event === "resources_discover",
+  )?.[1];
   expect(handler).toBeDefined();
-  return handler({ type: "resources_discover", cwd, reason: "startup" }).skillPaths;
+  return handler({ type: "resources_discover", cwd, reason: "startup" })
+    .skillPaths;
 }
 
 describe("Copilot skills discovery", () => {
@@ -27,7 +33,9 @@ describe("Copilot skills discovery", () => {
   it("returns both repository skills directories from a nested cwd", () => {
     const root = path.join(tempDir, "repo");
     const nested = path.join(root, "src", "module");
-    const skills = COPILOT_SKILL_PATHS.map((relativePath) => path.join(root, relativePath));
+    const skills = COPILOT_SKILL_PATHS.map((relativePath) =>
+      path.join(root, relativePath),
+    );
     fs.mkdirSync(path.join(root, ".git"), { recursive: true });
     fs.mkdirSync(nested, { recursive: true });
     for (const skillsPath of skills) {
@@ -70,5 +78,48 @@ describe("Copilot skills discovery", () => {
     fs.mkdirSync(skills, { recursive: true });
 
     expect(discoverSkills(tempDir)).toEqual([skills]);
+  });
+
+  it("returns no skills when --no-skills is set", () => {
+    const root = path.join(tempDir, "repo");
+    fs.mkdirSync(path.join(root, ".git"), { recursive: true });
+    for (const relativePath of COPILOT_SKILL_PATHS) {
+      fs.mkdirSync(path.join(root, relativePath), { recursive: true });
+    }
+
+    const argvSpy = vi
+      .spyOn(process, "argv", "get")
+      .mockReturnValue(["pi", "--no-skills"]);
+    expect(discoverSkills(root)).toEqual([]);
+    argvSpy.mockRestore();
+  });
+
+  it("returns no skills when -ns is set", () => {
+    const root = path.join(tempDir, "repo");
+    fs.mkdirSync(path.join(root, ".git"), { recursive: true });
+    for (const relativePath of COPILOT_SKILL_PATHS) {
+      fs.mkdirSync(path.join(root, relativePath), { recursive: true });
+    }
+
+    const argvSpy = vi
+      .spyOn(process, "argv", "get")
+      .mockReturnValue(["pi", "-ns"]);
+    expect(discoverSkills(root)).toEqual([]);
+    argvSpy.mockRestore();
+  });
+});
+
+describe("isSkillsDisabled", () => {
+  it("detects --no-skills", () => {
+    expect(isSkillsDisabled(["pi", "--no-skills"])).toBe(true);
+  });
+
+  it("detects -ns", () => {
+    expect(isSkillsDisabled(["pi", "-ns"])).toBe(true);
+  });
+
+  it("returns false otherwise", () => {
+    expect(isSkillsDisabled(["pi", "--model", "gpt-4o"])).toBe(false);
+    expect(isSkillsDisabled(["pi"])).toBe(false);
   });
 });

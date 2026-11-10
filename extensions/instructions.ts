@@ -12,6 +12,10 @@ export const COPILOT_INSTRUCTION_PATHS = [
 
 export const COPILOT_SKILL_PATHS = [".github/skills", ".claude/skills"] as const;
 
+export function isSkillsDisabled(argv: string[] = process.argv): boolean {
+  return argv.includes("--no-skills") || argv.includes("-ns");
+}
+
 function repositoryRoot(cwd: string): string {
   let directory = path.resolve(cwd);
   while (true) {
@@ -24,6 +28,8 @@ function repositoryRoot(cwd: string): string {
 
 export default function (pi: ExtensionAPI) {
   pi.on("resources_discover", (event) => {
+    if (isSkillsDisabled()) return { skillPaths: [] };
+
     const root = repositoryRoot(event.cwd);
     const skillPaths = COPILOT_SKILL_PATHS.flatMap((relativePath) => {
       const skillsPath = path.join(root, relativePath);

@@ -46,7 +46,9 @@ describe("buildAwarenessSection", () => {
 
     const section = buildAwarenessSection("/tmp");
 
-    expect(section).toContain("Delegate to these with the subagent tool:");
+    expect(section).toContain(
+      "You are the main agent. Delegate to these subagents with the subagent tool:",
+    );
     expect(section).toContain("- writer (user): Writes prose");
     expect(section).toContain("specialist subagent over direct MCP calls");
     expect(section).toContain("including initial lookups");

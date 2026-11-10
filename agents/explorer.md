@@ -2,6 +2,7 @@
 name: explorer
 description: External web and library-documentation research using pi-web-access or Context7; returns a cited summary
 tools: web_search, fetch_content, get_search_content, source_check, context7_resolve_library_id, context7_query_docs, read, bash
+skills: research
 models:
   - github-copilot/gpt-6-luna
   - opencode-go/minimax-m3

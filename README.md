@@ -16,6 +16,16 @@ Or use a local copy during development:
 pi install ./path/to/pi-config
 ```
 
+## Required skills
+
+Some agents in this package expect skills from the companion skill collection:
+
+```bash
+pi install git:github.com/PhilippOesch/agent-skills
+```
+
+This makes skills such as `tdd`, `refactor`, `code-review`, `research`, `writing-for-agents`, and `ui-design` available to the subagents.
+
 ## Contents
 
 - `extensions/` — Pi extensions
@@ -30,9 +40,7 @@ personal Pi config (e.g. `~/.pi/agent/`) add the package:
 
 ```json
 {
-  "packages": [
-    "git:github.com/PhilippOesch/pi-mp-my-agent"
-  ]
+    "packages": ["git:github.com/PhilippOesch/pi-mp-my-agent"]
 }
 ```
 
@@ -62,16 +70,14 @@ Or add it to `~/.pi/agent/settings.json`:
 
 ```json
 {
-  "packages": [
-    "./path/to/pi-mp-my-agent"
-  ]
+    "packages": ["./path/to/pi-mp-my-agent"]
 }
 ```
 
-Validate the package manifest before committing:
+Validate the agent definitions before committing:
 
 ```bash
-npm run validate
+npm run check:agents
 ```
 
 ## License

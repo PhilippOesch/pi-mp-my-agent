@@ -7,7 +7,7 @@ import type {
   AgentToolResult,
   AgentToolUpdateCallback,
 } from "@earendil-works/pi-agent-core";
-import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { ExtensionContext, getAgentDir } from "@earendil-works/pi-coding-agent";
 import {
   type AgentConfig,
   type AgentScope,
@@ -94,7 +94,10 @@ export class SubagentDispatch {
     return { outcome: "success", result };
   }
 
-  private mergeAgents(base: AgentConfig[], override: AgentConfig[]): AgentConfig[] {
+  private mergeAgents(
+    base: AgentConfig[],
+    override: AgentConfig[],
+  ): AgentConfig[] {
     const map = new Map<string, AgentConfig>();
     for (const agent of base) {
       map.set(agent.name, agent);
@@ -118,6 +121,7 @@ export class SubagentDispatch {
 
     return {
       cwd: this.ctx.cwd,
+      agentDir: getAgentDir(),
       agentScope,
       dispatchDefaults,
       agents,
@@ -126,6 +130,7 @@ export class SubagentDispatch {
       confirmProjectAgents: this.params.confirmProjectAgents ?? true,
       mode: this.inferMode(this.params),
       requestedAgentNames: this.extractAgentNames(),
+      projectTrusted: this.ctx.isProjectTrusted(),
       totalSteps: this.params.chain?.length || this.params.tasks?.length || 1,
       invocationId: randomUUID(),
       timeoutSeconds: this.params.timeoutSeconds,

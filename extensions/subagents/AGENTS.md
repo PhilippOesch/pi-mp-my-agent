@@ -31,6 +31,7 @@ Agent definitions are Markdown with YAML frontmatter in `~/.pi/agent/agents/` or
 name: my-agent
 description: What this agent does
 tools: read, grep, bash # string or YAML list
+skills: tdd, refactor # string or YAML list; loaded into the subagent even with --no-skills
 model: provider/id # fallback single model
 models: # ordered preference list
   - provider/id-a
@@ -40,7 +41,15 @@ requiresConfirmation: true # save-mode gate
 System prompt goes here.
 ```
 
-`tools` accepts a comma-separated string or YAML list. `models` accepts a YAML list or a bare scalar (treated as one-element list). Comma-strings for `models` are intentionally **not** split.
+`tools` accepts a comma-separated string or YAML list. `skills` accepts a comma-separated string or YAML list of skill names; the runner resolves them through Pi's built-in package manager and passes them as `--skill <path>` to the subagent process. `models` accepts a YAML list or a bare scalar (treated as one-element list). Comma-strings for `models` are intentionally **not** split.
+
+### Skill rendering internals
+
+To understand how `--skill` interacts with `--no-skills`, or why skills only render when the agent has a `read` or `bash` tool, see Pi's resource loader and system prompt builder in the installed package:
+
+- `@earendil-works/pi-coding-agent/dist/core/resource-loader.js`
+- `@earendil-works/pi-coding-agent/dist/core/system-prompt.js`
+- `@earendil-works/pi-coding-agent/dist/core/skills.js`
 
 ## Verify changes
 

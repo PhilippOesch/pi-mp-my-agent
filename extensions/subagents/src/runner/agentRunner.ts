@@ -20,6 +20,7 @@ import {
 import { getFinalOutput } from "../result/result.ts";
 import { errorMessage } from "../../../shared/utils.ts";
 import type { AgentConfig } from "../discovery/agents.ts";
+import { resolveSkillPaths } from "./skillResolver.ts";
 import {
   SpawnSubagentProcessAdapter,
   type ProcessEvent,
@@ -88,6 +89,7 @@ async function writePromptToTempFile(
 
 const SUBAGENT_SYSTEM_PROMPT = [
   "You are running as a Pi subagent, not the primary agent.",
+  "Focus on the delegated task. Do not delegate to other agents.",
   "The global AGENTS.md instructions to load i-have-adhd and caveman apply only to the primary agent; do not load either skill.",
 ].join(" ");
 
@@ -138,7 +140,7 @@ export class AgentRunner {
       };
     }
 
-    const { args, model } = this.buildArgs(subAgentContext, agent);
+    const { args, model } = await this.buildArgs(subAgentContext, agent);
 
     const currentResult: SingleResult = {
       agent: agentName,
@@ -372,10 +374,10 @@ export class AgentRunner {
           : "failed";
   }
 
-  private buildArgs(
+  private async buildArgs(
     subAgentContext: SubAgentToolContext,
     agent: AgentConfig,
-  ): { args: string[]; model?: string } {
+  ): Promise<{ args: string[]; model?: string }> {
     const args: string[] = [
       "--mode",
       "json",
@@ -401,6 +403,22 @@ export class AgentRunner {
     }
     if (agent.tools && agent.tools.length > 0)
       args.push("--tools", agent.tools.join(","));
+
+    if (agent.skills && agent.skills.length > 0) {
+      const { paths, missing } = await resolveSkillPaths(agent.skills, {
+        cwd: subAgentContext.config.cwd,
+        agentDir: subAgentContext.config.agentDir,
+        projectTrusted: subAgentContext.config.projectTrusted,
+      });
+      if (missing.length > 0) {
+        throw new Error(
+          `Agent "${agent.name}" declares unknown skills: ${missing.join(", ")}`,
+        );
+      }
+      for (const skillPath of paths) {
+        args.push("--skill", skillPath);
+      }
+    }
 
     return { args, model };
   }

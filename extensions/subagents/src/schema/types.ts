@@ -196,6 +196,7 @@ export interface DispatchDefaults {
 
 export interface SubagentConfig {
   cwd: string;
+  agentDir: string;
   agentScope: AgentScope;
   dispatchDefaults: DispatchDefaults;
   agents: AgentConfig[];
@@ -204,6 +205,7 @@ export interface SubagentConfig {
   confirmProjectAgents: boolean;
   mode: AgentMode;
   requestedAgentNames: string[];
+  projectTrusted: boolean;
   totalSteps?: number;
   invocationId?: string;
   timeoutSeconds?: number;

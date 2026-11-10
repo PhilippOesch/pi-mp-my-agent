@@ -50,6 +50,7 @@ const makeCtx = (overrides: Partial<ExtensionContext> = {}): ExtensionContext =>
     hasUI: true,
     ui: { confirm: vi.fn() },
     sessionManager: { getBranch: () => [] },
+    isProjectTrusted: () => true,
     ...overrides,
   }) as unknown as ExtensionContext;
 
