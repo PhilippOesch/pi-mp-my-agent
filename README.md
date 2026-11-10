@@ -24,7 +24,7 @@ Some agents in this package expect skills from the companion skill collection:
 pi install git:github.com/PhilippOesch/agent-skills
 ```
 
-This makes skills such as `tdd`, `refactor`, `code-review`, `research`, `writing-for-agents`, and `ui-design` available to the subagents.
+This makes skills such as `tdd`, `refactor`, `code-review`, `research`, `writing-for-agents`, `ui-design`, and `grill-me` available to the subagents.
 
 ## Contents
 
