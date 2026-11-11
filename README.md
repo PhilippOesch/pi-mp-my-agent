@@ -47,20 +47,32 @@ personal Pi config (e.g. `~/.pi/agent/`) add the package:
 Create your own `settings.json`, `keybindings.json`, `blacklist.json`, and
 `mcp.json` in `~/.pi/agent/` as needed.
 
-`pi-mp-my-agent.config.json` in `~/.pi/agent/` is optional and can be used to
-configure package-wide behavior. For example, enable only a subset of agents:
+`pi-mp-my-agent.config.json` in your Pi agent directory (normally
+`~/.pi/agent/`) is optional and configures package behavior. For example:
 
 ```json
 {
-  "agents": {
-    "whitelist": ["code-reviewer", "worker"]
-  }
+    "agents": {
+        "whitelist": ["code-reviewer", "worker"]
+    },
+    "readModeToggle": {
+        "keybinding": "alt+ctrl+x"
+    }
 }
 ```
 
 If `agents.whitelist` is empty or omitted, all agents from this package are
 enabled. Agent names correspond to the file names in the `agents/` directory
 (without the `.md` extension).
+
+`readModeToggle.keybinding` replaces the save/yolo mode toggle shortcut
+(default: `ctrl+shift+m`); `/mode` still works. Omit the setting to keep the
+default. Use Pi key syntax such as `alt+ctrl+x` (lowercase modifiers and
+letters; special keys use Pi's spelling, such as `pageUp`). Invalid values produce a
+console warning and fall back to the default without discarding a valid agent
+whitelist. Run `/reload` after editing this file. Pi handles shortcut conflicts;
+use `/hotkeys` to inspect active shortcuts. Some combinations require terminal
+keyboard protocol support.
 
 `mcp.json`, `auth.json`, `trust.json`, `models-store.json`, `memory/`, and
 `sessions/` are generated at runtime and are not tracked.

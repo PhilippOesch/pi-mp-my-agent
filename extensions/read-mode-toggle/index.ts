@@ -13,7 +13,8 @@
  *
  * Usage:
  *   - `/mode` toggles between save and yolo mode.
- *   - `Ctrl+Tab` toggles between save and yolo mode.
+ *   - `Ctrl+Shift+M` (or `readModeToggle.keybinding` in the user package config)
+ *     toggles between save and yolo mode.
  *   - The active mode is always shown in the TUI footer.
  *   - A one-sentence mode note is appended to the system prompt on every
  *     agent turn via `before_agent_start`.
@@ -33,9 +34,8 @@ import type {
   ToolCallEvent,
 } from "@earendil-works/pi-coding-agent";
 import { READ_MODE_ENTRY_TYPE } from "../shared/constants.ts";
-import {
-	Key,
-} from "@earendil-works/pi-tui";
+import { loadConfig } from "../shared/config.ts";
+import { Key } from "@earendil-works/pi-tui";
 
 type Mode = "save" | "yolo";
 
@@ -48,7 +48,10 @@ function migrateMode(value: string): Mode | undefined {
   return undefined;
 }
 
-export default function readModeToggleExtension(pi: ExtensionAPI): void {
+export default async function readModeToggleExtension(
+  pi: ExtensionAPI,
+): Promise<void> {
+  const { readModeToggle } = await loadConfig();
   let mode: Mode = "save";
 
   function updateStatus(ctx: ExtensionContext): void {
@@ -86,7 +89,7 @@ export default function readModeToggleExtension(pi: ExtensionAPI): void {
     },
   });
 
-  pi.registerShortcut(Key.ctrlShift("m"), {
+  pi.registerShortcut(readModeToggle.keybinding ?? Key.ctrlShift("m"), {
     description: "Toggle between save mode and yolo mode",
     handler: (ctx) => {
       if (!ctx.hasUI) return;
@@ -150,7 +153,10 @@ export default function readModeToggleExtension(pi: ExtensionAPI): void {
     }
 
     if (!ctx.hasUI) {
-      return { block: true, reason: "Cannot request permission without a UI" };
+      return {
+        block: true,
+        reason: "Cannot request permission without a UI",
+      };
     }
 
     const preview = buildToolPreview(event);

@@ -2,10 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { matchesKey } from "@earendil-works/pi-tui";
 import {
   loadConfig,
   createConfigStore,
   CONFIG_FILE_NAME,
+  isKeyId,
 } from "../../../../shared/config.ts";
 
 describe("loadConfig", () => {
@@ -28,7 +30,7 @@ describe("loadConfig", () => {
 
   it("returns defaults when the config file is missing", async () => {
     const config = await loadConfig(tempDir);
-    expect(config).toEqual({ agents: { whitelist: [] } });
+    expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
     expect(Object.isFrozen(config)).toBe(true);
     expect(warnSpy).not.toHaveBeenCalled();
   });
@@ -40,6 +42,7 @@ describe("loadConfig", () => {
     const config = await loadConfig(tempDir);
     expect(config).toEqual({
       agents: { whitelist: ["code-reviewer", "worker"] },
+      readModeToggle: {},
     });
     expect(Object.isFrozen(config)).toBe(true);
     expect(warnSpy).not.toHaveBeenCalled();
@@ -48,14 +51,14 @@ describe("loadConfig", () => {
   it("fills missing values with defaults", async () => {
     writeConfig(JSON.stringify({}));
     const config = await loadConfig(tempDir);
-    expect(config).toEqual({ agents: { whitelist: [] } });
+    expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
   it("returns defaults and warns on invalid JSON", async () => {
     writeConfig("{ not json");
     const config = await loadConfig(tempDir);
-    expect(config).toEqual({ agents: { whitelist: [] } });
+    expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("parse error"),
     );
@@ -64,7 +67,7 @@ describe("loadConfig", () => {
   it("returns defaults and warns on validation failure", async () => {
     writeConfig(JSON.stringify({ agents: { whitelist: "not-an-array" } }));
     const config = await loadConfig(tempDir);
-    expect(config).toEqual({ agents: { whitelist: [] } });
+    expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("failed validation"),
     );
@@ -78,7 +81,7 @@ describe("loadConfig", () => {
       JSON.stringify({ agents: { whitelist: [] }, unknownKey: true }),
     );
     const config = await loadConfig(tempDir);
-    expect(config).toEqual({ agents: { whitelist: [] } });
+    expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("failed validation"),
     );
@@ -87,10 +90,125 @@ describe("loadConfig", () => {
   it("returns defaults and warns on non-ENOENT file-system errors", async () => {
     fs.mkdirSync(path.join(tempDir, CONFIG_FILE_NAME));
     const config = await loadConfig(tempDir);
-    expect(config).toEqual({ agents: { whitelist: [] } });
+    expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("file-system error"),
     );
+  });
+  it("keeps a valid replacement and freezes it", async () => {
+    writeConfig(
+      JSON.stringify({
+        agents: { whitelist: ["worker"] },
+        readModeToggle: { keybinding: "shift+ctrl+pageUp" },
+      }),
+    );
+    const config = await loadConfig(tempDir);
+    expect(config).toEqual({
+      agents: { whitelist: ["worker"] },
+      readModeToggle: { keybinding: "shift+ctrl+pageUp" },
+    });
+    expect(Object.isFrozen(config.readModeToggle)).toBe(true);
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it.each([42, null, [], "ctrl+ctrl+m", "ctrl+bad", "Ctrl+Shift+M", "ctrl+m+"])(
+    "warns and preserves the whitelist for invalid keybinding %j",
+    async (keybinding) => {
+      writeConfig(
+        JSON.stringify({
+          agents: { whitelist: ["worker"] },
+          readModeToggle: { keybinding },
+        }),
+      );
+      const config = await loadConfig(tempDir);
+      expect(config).toEqual({
+        agents: { whitelist: ["worker"] },
+        readModeToggle: {},
+      });
+      expect(Object.isFrozen(config.readModeToggle)).toBe(true);
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("invalid readModeToggle.keybinding"),
+      );
+    },
+  );
+
+  it("warns and preserves the whitelist for a non-object setting", async () => {
+    writeConfig(
+      JSON.stringify({ agents: { whitelist: ["worker"] }, readModeToggle: 42 }),
+    );
+    expect(await loadConfig(tempDir)).toEqual({
+      agents: { whitelist: ["worker"] },
+      readModeToggle: {},
+    });
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("invalid readModeToggle.keybinding"),
+    );
+  });
+
+  it("does not mask unknown properties alongside an invalid keybinding", async () => {
+    writeConfig(
+      JSON.stringify({
+        agents: { whitelist: ["worker"] },
+        readModeToggle: { keybinding: 42, unknown: true },
+      }),
+    );
+    expect(await loadConfig(tempDir)).toEqual({
+      agents: { whitelist: [] },
+      readModeToggle: {},
+    });
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("failed validation"),
+    );
+  });
+});
+
+describe("isKeyId", () => {
+  it.each([
+    "ctrl+shift+m",
+    "shift+ctrl+m",
+    "ctrl+pageUp",
+    "alt+f12",
+    "super+k",
+    "+",
+    "ctrl++",
+    "f1",
+    "shift+ctrl+alt+super+?",
+  ])("accepts %s", (key) => {
+    expect(isKeyId(key)).toBe(true);
+  });
+  it.each([
+    null,
+    1,
+    [],
+    "",
+    "ctrl+ctrl+m",
+    "ctrl+bad",
+    "Ctrl+Shift+M",
+    "ctrl+m+",
+    "ctrl+",
+    "f13",
+    "pageup",
+    "ctrl+shift+ctrl+m",
+  ])("rejects %j", (key) => {
+    expect(isKeyId(key)).toBe(false);
+  });
+
+  it.each([
+    ["shift+ctrl+m", "\u001b[109;6u"],
+    ["ctrl+shift+m", "\u001b[109;6u"],
+    ["ctrl+pageUp", "\u001b[5;5~"],
+    ["shift+ctrl+pageUp", "\u001b[5;6~"],
+  ])("matches Pi's shortcut matcher for %s", (key, input) => {
+    expect(isKeyId(key)).toBe(true);
+    if (!isKeyId(key)) throw new Error(`Invalid key: ${key}`);
+    expect(matchesKey(input, key)).toBe(true);
+  });
+
+  it("matches literal + in the project's Pi dependency", () => {
+    expect(isKeyId("+")).toBe(true);
+    expect(isKeyId("ctrl++")).toBe(true);
+    expect(matchesKey("+", "+")).toBe(true);
+    expect(matchesKey("\u001b[43;5u", "ctrl++")).toBe(true);
   });
 });
 
@@ -133,6 +251,7 @@ describe("createConfigStore", () => {
     expect(store.getConfig()).toBe(loaded);
     expect(store.getConfig()).toEqual({
       agents: { whitelist: ["code-reviewer"] },
+      readModeToggle: {},
     });
     expect(store.get("agents")).toEqual({ whitelist: ["code-reviewer"] });
   });
@@ -153,8 +272,14 @@ describe("createConfigStore", () => {
       const storeB = createConfigStore();
       await storeA.loadConfig(tempDirA);
       await storeB.loadConfig(tempDirB);
-      expect(storeA.getConfig()).toEqual({ agents: { whitelist: ["a"] } });
-      expect(storeB.getConfig()).toEqual({ agents: { whitelist: ["b"] } });
+      expect(storeA.getConfig()).toEqual({
+        agents: { whitelist: ["a"] },
+        readModeToggle: {},
+      });
+      expect(storeB.getConfig()).toEqual({
+        agents: { whitelist: ["b"] },
+        readModeToggle: {},
+      });
     } finally {
       fs.rmSync(tempDirA, { recursive: true, force: true });
       fs.rmSync(tempDirB, { recursive: true, force: true });
@@ -168,5 +293,6 @@ describe("createConfigStore", () => {
     expect(Object.isFrozen(config)).toBe(true);
     expect(Object.isFrozen(config.agents)).toBe(true);
     expect(Object.isFrozen(config.agents.whitelist)).toBe(true);
+    expect(Object.isFrozen(config.readModeToggle)).toBe(true);
   });
 });
