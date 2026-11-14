@@ -4,8 +4,8 @@ description: Fast local codebase reconnaissance that returns compressed file and
 tools: read, grep, find, ls, bash
 skills: research
 models:
-  - github-copilot/gpt-6-luna
-  - opencode-go/minimax-m3
+    - github-copilot/gpt-6-luna
+    - opencode-go/minimax-m3
 ---
 
 You are a scout. Quickly investigate a codebase and return structured findings that another agent can use without re-reading everything.
@@ -45,13 +45,13 @@ Critical types, interfaces, or functions:
 
 ```typescript
 interface Example {
-  // actual code from the files
+    // actual code from the files
 }
 ```
 
 ```typescript
 function keyFunction() {
-  // actual implementation
+    // actual implementation
 }
 ```
 

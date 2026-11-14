@@ -22,10 +22,10 @@ import { promisify } from "node:util";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { marked } from "marked";
 import { Type } from "typebox";
-import { isWslEnvironment } from "../shared/interop";
+import { isWslEnvironment } from "../shared/interop.js";
 
 function wrapHtml(title: string, bodyHtml: string): string {
-  return `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -104,107 +104,116 @@ ${bodyHtml}
 }
 
 function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 const execFileAsync = promisify(execFile);
 
 function getPlatformOpenCommand(process: NodeJS.Process): string {
-  if (isWslEnvironment(process)) {
-    return "explorer.exe";
-  }
-  //windows native
-  if (process.platform == "win32") {
-    return "start";
-  }
-  // mac ose
-  if (process.platform == "darwin") {
-    return "open";
-  }
-  // linux
-  return "xdg-open";
+    if (isWslEnvironment(process)) {
+        return "explorer.exe";
+    }
+    //windows native
+    if (process.platform == "win32") {
+        return "start";
+    }
+    // mac ose
+    if (process.platform == "darwin") {
+        return "open";
+    }
+    // linux
+    return "xdg-open";
 }
 
 async function openBrowser(filePath: string): Promise<void> {
-  const isWsl = isWslEnvironment(process);
-  const command = getPlatformOpenCommand(process);
-  let targetPath = filePath;
+    const isWsl = isWslEnvironment(process);
+    const command = getPlatformOpenCommand(process);
+    let targetPath = filePath;
 
-  if (isWsl) {
-    const { stdout } = await execFileAsync("wslpath", ["-w", filePath], {
-      encoding: "utf8",
-    });
-    targetPath = stdout.trim();
-    if (!targetPath) {
-      throw new Error(`wslpath returned an empty path for "${filePath}"`);
+    if (isWsl) {
+        const { stdout } = await execFileAsync("wslpath", ["-w", filePath], {
+            encoding: "utf8",
+        });
+        targetPath = stdout.trim();
+        if (!targetPath) {
+            throw new Error(`wslpath returned an empty path for "${filePath}"`);
+        }
     }
-  }
 
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, [targetPath], {
-      detached: !isWsl,
-      stdio: "ignore",
+    return new Promise((resolve, reject) => {
+        const child = spawn(command, [targetPath], {
+            detached: !isWsl,
+            stdio: "ignore",
+        });
+        child.on("error", reject);
+        child.on("spawn", () => {
+            // In WSL, explorer.exe can hand the file to Windows successfully and still
+            // exit nonzero. A successful spawn is the reliable signal that the request
+            // was handed off; the opener's later exit status is not meaningful here.
+            child.unref();
+            resolve();
+        });
     });
-    child.on("error", reject);
-    child.on("spawn", () => {
-      // In WSL, explorer.exe can hand the file to Windows successfully and still
-      // exit nonzero. A successful spawn is the reliable signal that the request
-      // was handed off; the opener's later exit status is not meaningful here.
-      child.unref();
-      resolve();
-    });
-  });
 }
 
 export default function (pi: ExtensionAPI) {
-  pi.registerTool({
-    name: "preview_markdown",
-    label: "Preview Markdown",
-    description:
-      "Render a Markdown file to HTML and open it in the default web browser.",
-    parameters: Type.Object({
-      path: Type.String({
+    pi.registerTool({
+        name: "preview_markdown",
+        label: "Preview Markdown",
         description:
-          "Path to the Markdown file to preview. Relative paths are resolved against the current working directory.",
-      }),
-    }),
-    async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-      const inputPath = resolve(ctx.cwd, params.path);
-      let markdown: string;
-      try {
-        markdown = await readFile(inputPath, "utf-8");
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new Error(
-          `Could not read Markdown file "${inputPath}": ${message}`,
-        );
-      }
+            "Render a Markdown file to HTML and open it in the default web browser.",
+        parameters: Type.Object({
+            path: Type.String({
+                description:
+                    "Path to the Markdown file to preview. Relative paths are resolved against the current working directory.",
+            }),
+        }),
+        async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
+            const inputPath = resolve(ctx.cwd, params.path);
+            let markdown: string;
+            try {
+                markdown = await readFile(inputPath, "utf-8");
+            } catch (error) {
+                const message =
+                    error instanceof Error ? error.message : String(error);
+                throw new Error(
+                    `Could not read Markdown file "${inputPath}": ${message}`,
+                );
+            }
 
-      const bodyHtml = await marked.parse(markdown, { gfm: true });
-      const html = wrapHtml(basename(inputPath), bodyHtml);
+            const bodyHtml = await marked.parse(markdown, { gfm: true });
+            const html = wrapHtml(basename(inputPath), bodyHtml);
 
-      const tempDir = await mkdtemp(join(tmpdir(), "pi-markdown-preview-"));
-      const outputPath = join(tempDir, `${basename(inputPath, ".md")}.html`);
-      await writeFile(outputPath, html, "utf-8");
+            const tempDir = await mkdtemp(
+                join(tmpdir(), "pi-markdown-preview-"),
+            );
+            const outputPath = join(
+                tempDir,
+                `${basename(inputPath, ".md")}.html`,
+            );
+            await writeFile(outputPath, html, "utf-8");
 
-      try {
-        await openBrowser(outputPath);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new Error(
-          `Rendered HTML to "${outputPath}", but could not open the browser: ${message}`,
-        );
-      }
+            try {
+                await openBrowser(outputPath);
+            } catch (error) {
+                const message =
+                    error instanceof Error ? error.message : String(error);
+                throw new Error(
+                    `Rendered HTML to "${outputPath}", but could not open the browser: ${message}`,
+                );
+            }
 
-      return {
-        content: [{ type: "text", text: `Preview opened: ${outputPath}` }],
-        details: { htmlPath: outputPath },
-      };
-    },
-  });
+            return {
+                content: [
+                    { type: "text", text: `Preview opened: ${outputPath}` },
+                ],
+                details: { htmlPath: outputPath },
+            };
+        },
+    });
 }

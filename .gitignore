@@ -16,6 +16,7 @@ install
 bin
 /mcp-auth.json
 favorite-models.json
+*.tsbuildinfo
 
 # Local working notes
 /plans/
@@ -26,3 +27,4 @@ favorite-models.json
 /AGENTS.md
 /extensions/subagents/plans/
 /extensions/subagents/package-lock.json
+/extensions/memory/package-lock.json

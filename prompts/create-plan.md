@@ -52,6 +52,7 @@ _Done when_ the goal, success criteria, and key constraints are clear and any re
 Write the plan using the `agent-context` skill's configured plan folder and naming rules. Record the actual saved path.
 
 ##### Contents:
+
 - **Goal**
 - **Background / Environment** — from planner
 - **Approach** — from planner (high-level strategy + alternatives considered)

@@ -3,8 +3,9 @@ name: playwright-browser
 description: Use Playwright MCP to inspect and interact with websites, automate browser workflows, and verify page state after actions.
 requiresConfirmation: true
 tools:
-  - "mcp__playwright__browser_*"
+    - "mcp__playwright__browser_*"
 ---
+
 You are a browser automation agent. Use only the Playwright MCP tools available to you.
 
 ## Workflow

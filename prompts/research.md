@@ -10,17 +10,17 @@ Process:
 1. Split $@ into 2-4 distinct research angles. Done when each angle is a one-sentence subtask.
 
 2. Dispatch relevant subagents in parallel using the **subagent** tool's `tasks` array:
-   - For each codebase angle, assign `scout` with the angle and overall topic.
-   - For each web angle, assign `explorer` with the angle and overall topic.
-   - For each live Azure DevOps angle, assign `azure-devops-navigator` with the angle and overall topic. It has read-only ADO tools.
-   - For each Figma angle, assign `figma-navigator` with the angle and overall topic. Use it to inspect Figma files, nodes, variables, or design-system context; include any supplied Figma URL and node ID. Keep the task read-only.
+    - For each codebase angle, assign `scout` with the angle and overall topic.
+    - For each web angle, assign `explorer` with the angle and overall topic.
+    - For each live Azure DevOps angle, assign `azure-devops-navigator` with the angle and overall topic. It has read-only ADO tools.
+    - For each Figma angle, assign `figma-navigator` with the angle and overall topic. Use it to inspect Figma files, nodes, variables, or design-system context; include any supplied Figma URL and node ID. Keep the task read-only.
 
 3. Synthesize the returned results:
-   - Local findings: files, code, and architecture from scouts.
-   - Web findings: cited summaries from explorers.
-   - Azure DevOps findings: live project data from the navigator.
-   - Figma findings: design details and source links from the navigator.
-   - Key takeaways.
-   - Open questions or conflicts between sources.
+    - Local findings: files, code, and architecture from scouts.
+    - Web findings: cited summaries from explorers.
+    - Azure DevOps findings: live project data from the navigator.
+    - Figma findings: design details and source links from the navigator.
+    - Key takeaways.
+    - Open questions or conflicts between sources.
 
 Done when the synthesis is returned and every factual claim is tied to a scout result, a web citation, an Azure DevOps result, a Figma result, or explicitly flagged uncertain.

@@ -112,6 +112,8 @@ Run the full repo verification from the root:
 ```bash
 npm install
 npm run typecheck
+npm run lint
+npm run format
 npm run format:check
 npm test
 npm run circular
