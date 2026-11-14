@@ -107,6 +107,17 @@ Validate the agent definitions before committing:
 npm run check:agents
 ```
 
+Run the full repo verification from the root:
+
+```bash
+npm install
+npm run typecheck
+npm run format:check
+npm test
+npm run circular
+npm run check
+```
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).

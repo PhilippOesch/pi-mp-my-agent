@@ -13,15 +13,19 @@
     ],
     "scripts": {
         "check:agents": "node scripts/check-agents.mjs",
-        "typecheck": "npm run typecheck:subagents && npm run typecheck:memory",
+        "typecheck": "npm run typecheck:root && npm run typecheck:subagents && npm run typecheck:memory",
+        "typecheck:root": "tsc --noEmit -p tsconfig.json",
         "typecheck:subagents": "cd extensions/subagents && npm run typecheck",
         "typecheck:memory": "cd extensions/memory && npm run typecheck",
         "lint": "npm run lint:subagents && npm run lint:memory",
         "lint:subagents": "cd extensions/subagents && npm run lint",
         "lint:memory": "cd extensions/memory && npm run lint",
-        "format:check": "npx prettier --check extensions/subagents extensions/memory extensions/shared",
-        "format": "npx prettier --write extensions/subagents extensions/memory extensions/shared",
-        "test": "cd extensions/subagents && npm test",
+        "format:check": "npx prettier --check extensions/subagents extensions/memory extensions/shared tests",
+        "format": "npx prettier --write extensions/subagents extensions/memory extensions/shared tests",
+        "test": "npm run test:root && npm run test:subagents && npm run test:memory",
+        "test:root": "vitest run",
+        "test:subagents": "cd extensions/subagents && npm test",
+        "test:memory": "cd extensions/memory && npm test",
         "circular": "npm run circular:subagents && npm run circular:memory",
         "circular:subagents": "cd extensions/subagents && npm run circular",
         "circular:memory": "cd extensions/memory && npm run circular",
@@ -64,9 +68,12 @@
         "marked": "^18.1.0"
     },
     "devDependencies": {
-        "@earendil-works/pi-coding-agent": "^1.1.0",
-        "@earendil-works/pi-tui": "^1.1.0",
-        "@types/node": "*"
+        "@earendil-works/pi-coding-agent": "1.4.0",
+        "@earendil-works/pi-tui": "1.4.0",
+        "@types/node": "*",
+        "typebox": "*",
+        "typescript": "^5.9.3",
+        "vitest": "^5.0.3"
     },
     "peerDependencies": {
         "@earendil-works/pi-ai": "*",

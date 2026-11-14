@@ -8,7 +8,7 @@ import {
   createConfigStore,
   CONFIG_FILE_NAME,
   isKeyId,
-} from "../../../../shared/config.ts";
+} from "../../extensions/shared/config.ts";
 
 describe("loadConfig", () => {
   let tempDir: string;

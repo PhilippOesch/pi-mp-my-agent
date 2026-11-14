@@ -3,13 +3,13 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { CONFIG_FILE_NAME } from "../../../../shared/config.ts";
-import readModeToggleExtension from "../../../../read-mode-toggle/index.ts";
+import { CONFIG_FILE_NAME } from "../../extensions/shared/config.ts";
+import readModeToggleExtension from "../../extensions/read-mode-toggle/index.ts";
 
 const agentDir = vi.hoisted(() => ({ value: "" }));
-vi.mock("../../../../shared/config.ts", async (importOriginal) => {
+vi.mock("../../extensions/shared/config.ts", async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import("../../../../shared/config.ts")>();
+    await importOriginal<typeof import("../../extensions/shared/config.ts")>();
   return { ...actual, loadConfig: () => actual.loadConfig(agentDir.value) };
 });
 

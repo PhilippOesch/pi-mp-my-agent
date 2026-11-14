@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import registerInstructions, {
   COPILOT_SKILL_PATHS,
   isSkillsDisabled,
-} from "../../../../instructions.ts";
+} from "../../extensions/instructions.ts";
 
 function discoverSkills(cwd: string): string[] {
   const on = vi.fn();
