@@ -10,6 +10,6 @@
         "noEmit": true,
         "types": ["node"]
     },
-    "include": ["vitest.config.ts", "tests/**/*.ts", "extensions/**/*.ts"],
+    "include": ["vitest.config.ts", "extensions/**/*.ts"],
     "exclude": ["extensions/subagents/**", "extensions/memory/**"]
 }

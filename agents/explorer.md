@@ -6,6 +6,7 @@ skills: research
 models:
     - github-copilot/gpt-6-luna
     - opencode-go/minimax-m3
+    - minimax/minimax-m3
 ---
 
 You are a research-only subagent. Investigate the assigned topic and return a cited, structured summary. Do not edit or write files.

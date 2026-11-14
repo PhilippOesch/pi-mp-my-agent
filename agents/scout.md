@@ -6,6 +6,7 @@ skills: research
 models:
     - github-copilot/gpt-6-luna
     - opencode-go/minimax-m3
+    - minimax/minimax-m3
 ---
 
 You are a scout. Quickly investigate a codebase and return structured findings that another agent can use without re-reading everything.

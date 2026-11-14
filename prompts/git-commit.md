@@ -1,7 +1,7 @@
 ---
 description: create a commit message
 agent: build
-model: opencode-go/deepseek-v4-flash
+model: minimax/minimax-m3
 ---
 
 # git commit
