@@ -1,4 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  Mock,
+  MockedFunction,
+  vi,
+} from "vitest";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -9,26 +18,47 @@ import {
   CONFIG_FILE_NAME,
   isKeyId,
 } from "./config.ts";
+import { readFile } from "node:fs/promises";
+
+class MockNodeException extends Error {
+  public constructor(
+    public code: string,
+    message?: string,
+    options?: ErrorOptions,
+  ) {
+    super(message, options);
+  }
+}
+
+vi.mock(import("node:fs/promises"), () => {
+  return { readFile: vi.fn() };
+});
 
 describe("loadConfig", () => {
-  let tempDir: string;
+  const tempDir: string = "some/path";
   let warnSpy: ReturnType<typeof vi.spyOn>;
+  let readFileMock: MockedFunction<typeof readFile>;
 
   beforeEach(() => {
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "config-test-"));
+    readFileMock = readFile as MockedFunction<typeof readFile>;
     warnSpy = vi.spyOn(console, "warn").mockReturnValue(undefined);
   });
 
   afterEach(() => {
     warnSpy.mockRestore();
-    fs.rmSync(tempDir, { recursive: true, force: true });
+    readFileMock.mockRestore();
   });
 
-  function writeConfig(content: string) {
-    fs.writeFileSync(path.join(tempDir, CONFIG_FILE_NAME), content, "utf8");
+  function writeConfig(content?: string | null) {
+    readFileMock.mockImplementation(() =>
+      Promise.resolve<string>(content as string),
+    );
   }
 
   it("returns defaults when the config file is missing", async () => {
+    (readFileMock as Mock).mockImplementation(() => {
+      throw new MockNodeException("ENOENT");
+    });
     const config = await loadConfig(tempDir);
     expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
     expect(Object.isFrozen(config)).toBe(true);
@@ -88,7 +118,9 @@ describe("loadConfig", () => {
   });
 
   it("returns defaults and warns on non-ENOENT file-system errors", async () => {
-    fs.mkdirSync(path.join(tempDir, CONFIG_FILE_NAME));
+    (readFileMock as Mock).mockImplementation(() => {
+      throw new MockNodeException("t");
+    });
     const config = await loadConfig(tempDir);
     expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
     expect(warnSpy).toHaveBeenCalledWith(
@@ -216,18 +248,22 @@ describe("createConfigStore", () => {
   let tempDir: string;
   let warnSpy: ReturnType<typeof vi.spyOn>;
 
+  let readFileMock: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
+    readFileMock = readFile;
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "config-test-"));
     warnSpy = vi.spyOn(console, "warn").mockReturnValue(undefined);
   });
 
   afterEach(() => {
     warnSpy.mockRestore();
+    readFileMock.mockRestore();
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
-  function writeConfig(content: string) {
-    fs.writeFileSync(path.join(tempDir, CONFIG_FILE_NAME), content, "utf8");
+  function writeConfig(content?: string | null) {
+    (readFileMock as Mock).mockImplementation(() => content);
   }
 
   it("getConfig throws before loadConfig is called", () => {
@@ -260,13 +296,17 @@ describe("createConfigStore", () => {
     const tempDirA = fs.mkdtempSync(path.join(os.tmpdir(), "config-test-"));
     const tempDirB = fs.mkdtempSync(path.join(os.tmpdir(), "config-test-"));
     try {
-      fs.writeFileSync(
-        path.join(tempDirA, CONFIG_FILE_NAME),
-        JSON.stringify({ agents: { whitelist: ["a"] } }),
-      );
-      fs.writeFileSync(
-        path.join(tempDirB, CONFIG_FILE_NAME),
-        JSON.stringify({ agents: { whitelist: ["b"] } }),
+      (readFileMock as MockedFunction<typeof readFile>).mockImplementation(
+        async (dir, _) => {
+          if (dir === path.join(tempDirA, CONFIG_FILE_NAME)) {
+            return JSON.stringify({ agents: { whitelist: ["a"] } });
+          }
+
+          if (dir === path.join(tempDirB, CONFIG_FILE_NAME)) {
+            return JSON.stringify({ agents: { whitelist: ["b"] } });
+          }
+          return "";
+        },
       );
       const storeA = createConfigStore();
       const storeB = createConfigStore();

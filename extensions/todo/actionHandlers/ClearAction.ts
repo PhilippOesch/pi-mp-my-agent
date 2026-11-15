@@ -13,6 +13,9 @@ import {
 } from "../types.ts";
 import { TodoManager } from "../TodoManager.ts";
 
+/**
+ * Action for clearing all current todos.
+ */
 export class ClearAction implements TodoActionHandler<"clear"> {
     constructor(private _todos: TodoManager) {}
 

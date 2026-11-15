@@ -9,6 +9,9 @@ import { ClearAction } from "./ClearAction.ts";
 import { ListAction } from "./ListAction.ts";
 import { ToggleAction } from "./ToggleAction.ts";
 
+/**
+ * Action registry for available todo extension actions.
+ */
 export class ActionHandlerRegistry {
     private _registry: TodoHandlerMap;
 

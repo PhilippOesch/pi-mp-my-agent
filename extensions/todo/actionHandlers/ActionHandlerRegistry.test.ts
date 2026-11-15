@@ -19,10 +19,8 @@ describe("ActionHandlerRegistry", () => {
         expect(sut).not.toBeFalsy();
     });
 
-    const createSut = () => new ActionHandlerRegistry(fakeTodoManager);
-
     describe("get", () => {
-        it.for([
+        it.each([
             { action: "list", expectedType: ListAction },
             { action: "add", expectedType: AddAction },
         ])(
@@ -36,4 +34,6 @@ describe("ActionHandlerRegistry", () => {
             },
         );
     });
+
+    const createSut = () => new ActionHandlerRegistry(fakeTodoManager);
 });

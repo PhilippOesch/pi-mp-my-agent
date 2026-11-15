@@ -14,6 +14,9 @@ import {
 } from "../types.ts";
 import { TodoManager } from "../TodoManager.ts";
 
+/**
+ * Action for adding a todo to the list.
+ */
 export class AddAction implements TodoActionHandler<"add"> {
     constructor(private _todos: TodoManager) {}
 

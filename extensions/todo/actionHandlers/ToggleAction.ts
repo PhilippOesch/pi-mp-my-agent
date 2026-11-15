@@ -13,6 +13,9 @@ import {
 } from "../types.ts";
 import { TodoManager } from "../TodoManager.ts";
 
+/**
+ * Action for toggeling the state of a todo.
+ */
 export class ToggleAction implements TodoActionHandler<"toggle"> {
     constructor(private _todos: TodoManager) {}
 
