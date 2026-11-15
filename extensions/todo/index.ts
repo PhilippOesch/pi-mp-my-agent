@@ -16,15 +16,13 @@ import type {
     Theme,
 } from "@earendil-works/pi-coding-agent";
 import { matchesKey, Text, truncateToWidth } from "@earendil-works/pi-tui";
-import { createTodoHandlers, createTodoManager } from "./todo/handlers.ts";
 import {
-    type Actions,
-    type TodoActionHandler,
     type TodoDetails,
-    type TodoHandlerMap,
     type TodoManager,
     TodoParams,
-} from "./todo/types.ts";
+} from "./types.ts";
+import { DefaultTodoManager } from "./todoManager.ts";
+import { ActionHandlerRegistry } from "./actionHandlers/ActionHandlerRegistry.ts";
 
 /**
  * UI component for the /todos command
@@ -116,24 +114,10 @@ class TodoListComponent {
 }
 
 export default function (pi: ExtensionAPI) {
-    const todos: TodoManager = createTodoManager();
-    const handlers: TodoHandlerMap = createTodoHandlers(todos);
-
-    /**
-     * Look up the handler for an action.
-     *
-     * The action is validated against the schema before `execute` runs, but
-     * `renderResult` dispatches on `details.action`, which comes from session
-     * data and may hold an unknown action. Fail with a readable message
-     * instead of a TypeError on `undefined`.
-     */
-    function getHandler<A extends Actions>(action: A): TodoActionHandler<A> {
-        const handler: TodoActionHandler<A> | undefined = handlers[action];
-        if (!handler) {
-            throw new Error(`Unknown todo action: ${action}`);
-        }
-        return handler;
-    }
+    const todos: TodoManager = new DefaultTodoManager();
+    const handlers: ActionHandlerRegistry = new ActionHandlerRegistry(
+        todos,
+    );
 
     /**
      * Reconstruct state from session entries.
@@ -169,7 +153,9 @@ export default function (pi: ExtensionAPI) {
         parameters: TodoParams,
 
         async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
-            const { text, details } = getHandler(params.action).execute(params);
+            const { text, details } = handlers
+                .get(params.action)
+                .execute(params);
             return {
                 content: [{ type: "text", text }],
                 details: { ...details, action: params.action },
@@ -201,11 +187,9 @@ export default function (pi: ExtensionAPI) {
                 );
             }
 
-            return getHandler(details.action).renderResult(
-                result,
-                options,
-                theme,
-            );
+            return handlers
+                .get(details.action)
+                .renderResult(result, options, theme);
         },
     });
 

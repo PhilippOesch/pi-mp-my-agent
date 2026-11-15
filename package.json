@@ -44,7 +44,7 @@
             "./extensions/path-blacklist/index.ts",
             "./extensions/read-mode-toggle/index.ts",
             "./extensions/subagents/src/index.ts",
-            "./extensions/todo.ts",
+            "./extensions/todo/index.ts",
             "./extensions/working-indicator.ts"
         ],
         "prompts": [
