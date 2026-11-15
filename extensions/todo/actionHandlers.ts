@@ -17,8 +17,8 @@ import type {
     TodoActionHandler,
     TodoDetails,
     TodoHandlerMap,
-    TodoManager,
 } from "./types.ts";
+import { TodoManager } from "./TodoManager.ts";
 
 export class TodoActionHandlersManager {
     private _registry: TodoHandlerMap;

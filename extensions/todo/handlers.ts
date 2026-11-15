@@ -16,7 +16,6 @@ import type {
     TodoActionHandler,
     TodoDetails,
     TodoHandlerMap,
-    TodoManager,
 } from "./types.ts";
 
 // export function createTodoHandlers(todos: TodoManager): TodoHandlerMap {

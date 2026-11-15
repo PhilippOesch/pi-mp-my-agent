@@ -81,13 +81,3 @@ export type TodoManagerState = {
     todos: Todo[];
     nextId: number;
 };
-
-/** In-memory todo list, shared by the handlers and the /todos command. */
-export type TodoManager = {
-    reset: (resetState?: TodoManagerState) => void;
-    list: () => Todo[];
-    count: () => number;
-    currentId: () => number;
-    incrementId: () => number;
-    add: (todo: Todo) => void;
-};

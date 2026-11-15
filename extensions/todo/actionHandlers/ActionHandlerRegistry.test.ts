@@ -1,10 +1,10 @@
 import { describe, vi, Mock, Mocked, it, expect } from "vitest";
 import { ActionHandlerRegistry } from "./ActionHandlerRegistry.ts";
-import { DefaultTodoManager, TodoManager } from "../todoManager.ts";
 import { beforeEach } from "node:test";
 import { ListAction } from "./ListAction.ts";
 import { Actions } from "../types.ts";
 import { AddAction } from "./AddAction.ts";
+import { TodoManager } from "../TodoManager.ts";
 
 describe("ActionHandlerRegistry", () => {
     let fakeTodoManager: TodoManager;

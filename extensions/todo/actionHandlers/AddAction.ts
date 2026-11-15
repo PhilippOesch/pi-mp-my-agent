@@ -12,7 +12,7 @@ import {
     TodoActionParams,
     TodoDetails,
 } from "../types.ts";
-import { TodoManager } from "../todoManager.ts";
+import { TodoManager } from "../TodoManager.ts";
 
 export class AddAction implements TodoActionHandler<"add"> {
     constructor(private _todos: TodoManager) {}

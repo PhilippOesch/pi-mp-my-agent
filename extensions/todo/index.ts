@@ -16,13 +16,9 @@ import type {
     Theme,
 } from "@earendil-works/pi-coding-agent";
 import { matchesKey, Text, truncateToWidth } from "@earendil-works/pi-tui";
-import {
-    type TodoDetails,
-    type TodoManager,
-    TodoParams,
-} from "./types.ts";
-import { DefaultTodoManager } from "./todoManager.ts";
+import { type TodoDetails, TodoParams } from "./types.ts";
 import { ActionHandlerRegistry } from "./actionHandlers/ActionHandlerRegistry.ts";
+import { DefaultTodoManager, TodoManager } from "./TodoManager.ts";
 
 /**
  * UI component for the /todos command
@@ -115,9 +111,7 @@ class TodoListComponent {
 
 export default function (pi: ExtensionAPI) {
     const todos: TodoManager = new DefaultTodoManager();
-    const handlers: ActionHandlerRegistry = new ActionHandlerRegistry(
-        todos,
-    );
+    const handlers: ActionHandlerRegistry = new ActionHandlerRegistry(todos);
 
     /**
      * Reconstruct state from session entries.

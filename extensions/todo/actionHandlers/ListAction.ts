@@ -11,7 +11,7 @@ import {
     TodoActionParams,
     TodoDetails,
 } from "../types.ts";
-import { TodoManager } from "../todoManager.ts";
+import { TodoManager } from "../TodoManager.ts";
 
 export class ListAction implements TodoActionHandler<"list"> {
     constructor(private _todos: TodoManager) {}

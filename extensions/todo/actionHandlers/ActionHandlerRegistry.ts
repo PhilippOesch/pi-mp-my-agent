@@ -1,5 +1,9 @@
-import { TodoManager } from "../todoManager.ts";
-import { Actions, TodoActionHandler, TodoHandlerMap } from "../types.ts";
+import { TodoManager } from "../TodoManager.ts";
+import {
+    Actions,
+    TodoActionHandler,
+    TodoHandlerMap,
+} from "../types.ts";
 import { AddAction } from "./AddAction.ts";
 import { ClearAction } from "./ClearAction.ts";
 import { ListAction } from "./ListAction.ts";

@@ -11,7 +11,7 @@ import {
     TodoActionParams,
     TodoDetails,
 } from "../types.ts";
-import { TodoManager } from "../todoManager.ts";
+import { TodoManager } from "../TodoManager.ts";
 
 export class ToggleAction implements TodoActionHandler<"toggle"> {
     constructor(private _todos: TodoManager) {}
