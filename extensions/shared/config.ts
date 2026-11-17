@@ -94,7 +94,6 @@ function formatValidationErrors(value: unknown): string {
 
 export async function loadConfig(agentDir?: string): Promise<Config> {
   const configDir = agentDir ?? getAgentDir();
-  console.log(configDir);
   const configPath = join(configDir, CONFIG_FILE_NAME);
 
   let raw: unknown;

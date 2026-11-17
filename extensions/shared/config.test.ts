@@ -1,15 +1,4 @@
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  Mock,
-  MockedFunction,
-  vi,
-} from "vitest";
-import * as fs from "node:fs";
-import * as os from "node:os";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as path from "node:path";
 import { matchesKey } from "@earendil-works/pi-tui";
 import {
@@ -18,47 +7,24 @@ import {
   CONFIG_FILE_NAME,
   isKeyId,
 } from "./config.ts";
-import { readFile } from "node:fs/promises";
+import { resetFs, seedFs } from "./testing/fs-mock.ts";
+import { MockFsError } from "./testing/__mocks__/node:fs/promises.ts";
 
-class MockNodeException extends Error {
-  public constructor(
-    public code: string,
-    message?: string,
-    options?: ErrorOptions,
-  ) {
-    super(message, options);
-  }
-}
-
-vi.mock(import("node:fs/promises"), () => {
-  return { readFile: vi.fn() };
-});
+vi.mock(
+  "node:fs/promises",
+  async () => import("./testing/__mocks__/node:fs/promises.ts"),
+);
 
 describe("loadConfig", () => {
   const tempDir: string = "some/path";
   let warnSpy: ReturnType<typeof vi.spyOn>;
-  let readFileMock: MockedFunction<typeof readFile>;
 
   beforeEach(() => {
-    readFileMock = readFile as MockedFunction<typeof readFile>;
+    resetFs();
     warnSpy = vi.spyOn(console, "warn").mockReturnValue(undefined);
   });
 
-  afterEach(() => {
-    warnSpy.mockRestore();
-    readFileMock.mockRestore();
-  });
-
-  function writeConfig(content?: string | null) {
-    readFileMock.mockImplementation(() =>
-      Promise.resolve<string>(content as string),
-    );
-  }
-
   it("returns defaults when the config file is missing", async () => {
-    (readFileMock as Mock).mockImplementation(() => {
-      throw new MockNodeException("ENOENT");
-    });
     const config = await loadConfig(tempDir);
     expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
     expect(Object.isFrozen(config)).toBe(true);
@@ -66,9 +32,11 @@ describe("loadConfig", () => {
   });
 
   it("returns merged values for a valid config file", async () => {
-    writeConfig(
-      JSON.stringify({ agents: { whitelist: ["code-reviewer", "worker"] } }),
-    );
+    seedFs({
+      [path.join(tempDir, CONFIG_FILE_NAME)]: JSON.stringify({
+        agents: { whitelist: ["code-reviewer", "worker"] },
+      }),
+    });
     const config = await loadConfig(tempDir);
     expect(config).toEqual({
       agents: { whitelist: ["code-reviewer", "worker"] },
@@ -79,14 +47,18 @@ describe("loadConfig", () => {
   });
 
   it("fills missing values with defaults", async () => {
-    writeConfig(JSON.stringify({}));
+    seedFs({
+      [path.join(tempDir, CONFIG_FILE_NAME)]: JSON.stringify({}),
+    });
     const config = await loadConfig(tempDir);
     expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
   it("returns defaults and warns on invalid JSON", async () => {
-    writeConfig("{ not json");
+    seedFs({
+      [path.join(tempDir, CONFIG_FILE_NAME)]: "{ not json",
+    });
     const config = await loadConfig(tempDir);
     expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
     expect(warnSpy).toHaveBeenCalledWith(
@@ -95,7 +67,11 @@ describe("loadConfig", () => {
   });
 
   it("returns defaults and warns on validation failure", async () => {
-    writeConfig(JSON.stringify({ agents: { whitelist: "not-an-array" } }));
+    seedFs({
+      [path.join(tempDir, CONFIG_FILE_NAME)]: JSON.stringify({
+        agents: { whitelist: "not-an-array" },
+      }),
+    });
     const config = await loadConfig(tempDir);
     expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
     expect(warnSpy).toHaveBeenCalledWith(
@@ -107,9 +83,12 @@ describe("loadConfig", () => {
   });
 
   it("returns defaults and warns on unknown config keys", async () => {
-    writeConfig(
-      JSON.stringify({ agents: { whitelist: [] }, unknownKey: true }),
-    );
+    seedFs({
+      [path.join(tempDir, CONFIG_FILE_NAME)]: JSON.stringify({
+        agents: { whitelist: [] },
+        unknownKey: true,
+      }),
+    });
     const config = await loadConfig(tempDir);
     expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
     expect(warnSpy).toHaveBeenCalledWith(
@@ -118,8 +97,9 @@ describe("loadConfig", () => {
   });
 
   it("returns defaults and warns on non-ENOENT file-system errors", async () => {
-    (readFileMock as Mock).mockImplementation(() => {
-      throw new MockNodeException("t");
+    const fs = await import("node:fs/promises");
+    vi.mocked(fs.readFile).mockImplementation(() => {
+      throw new MockFsError("UNKNOWN", "mock file-system error");
     });
     const config = await loadConfig(tempDir);
     expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
@@ -127,13 +107,14 @@ describe("loadConfig", () => {
       expect.stringContaining("file-system error"),
     );
   });
+
   it("keeps a valid replacement and freezes it", async () => {
-    writeConfig(
-      JSON.stringify({
+    seedFs({
+      [path.join(tempDir, CONFIG_FILE_NAME)]: JSON.stringify({
         agents: { whitelist: ["worker"] },
         readModeToggle: { keybinding: "shift+ctrl+pageUp" },
       }),
-    );
+    });
     const config = await loadConfig(tempDir);
     expect(config).toEqual({
       agents: { whitelist: ["worker"] },
@@ -146,12 +127,12 @@ describe("loadConfig", () => {
   it.each([42, null, [], "ctrl+ctrl+m", "ctrl+bad", "Ctrl+Shift+M", "ctrl+m+"])(
     "warns and preserves the whitelist for invalid keybinding %j",
     async (keybinding) => {
-      writeConfig(
-        JSON.stringify({
+      seedFs({
+        [path.join(tempDir, CONFIG_FILE_NAME)]: JSON.stringify({
           agents: { whitelist: ["worker"] },
           readModeToggle: { keybinding },
         }),
-      );
+      });
       const config = await loadConfig(tempDir);
       expect(config).toEqual({
         agents: { whitelist: ["worker"] },
@@ -165,9 +146,12 @@ describe("loadConfig", () => {
   );
 
   it("warns and preserves the whitelist for a non-object setting", async () => {
-    writeConfig(
-      JSON.stringify({ agents: { whitelist: ["worker"] }, readModeToggle: 42 }),
-    );
+    seedFs({
+      [path.join(tempDir, CONFIG_FILE_NAME)]: JSON.stringify({
+        agents: { whitelist: ["worker"] },
+        readModeToggle: 42,
+      }),
+    });
     expect(await loadConfig(tempDir)).toEqual({
       agents: { whitelist: ["worker"] },
       readModeToggle: {},
@@ -178,12 +162,12 @@ describe("loadConfig", () => {
   });
 
   it("does not mask unknown properties alongside an invalid keybinding", async () => {
-    writeConfig(
-      JSON.stringify({
+    seedFs({
+      [path.join(tempDir, CONFIG_FILE_NAME)]: JSON.stringify({
         agents: { whitelist: ["worker"] },
         readModeToggle: { keybinding: 42, unknown: true },
       }),
-    );
+    });
     expect(await loadConfig(tempDir)).toEqual({
       agents: { whitelist: [] },
       readModeToggle: {},
@@ -248,22 +232,19 @@ describe("createConfigStore", () => {
   let tempDir: string;
   let warnSpy: ReturnType<typeof vi.spyOn>;
 
-  let readFileMock: ReturnType<typeof vi.spyOn>;
-
   beforeEach(() => {
-    readFileMock = readFile;
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "config-test-"));
+    tempDir = `some/store-path-${Date.now()}`;
     warnSpy = vi.spyOn(console, "warn").mockReturnValue(undefined);
   });
 
   afterEach(() => {
     warnSpy.mockRestore();
-    readFileMock.mockRestore();
-    fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
   function writeConfig(content?: string | null) {
-    (readFileMock as Mock).mockImplementation(() => content);
+    seedFs({
+      [path.join(tempDir, CONFIG_FILE_NAME)]: content as string,
+    });
   }
 
   it("getConfig throws before loadConfig is called", () => {
@@ -274,6 +255,7 @@ describe("createConfigStore", () => {
   });
 
   it("isLoaded returns false before loadConfig and true after", async () => {
+    seedFs({ [path.join(tempDir, CONFIG_FILE_NAME)]: JSON.stringify({}) });
     const store = createConfigStore();
     expect(store.isLoaded()).toBe(false);
     await store.loadConfig(tempDir);
@@ -293,37 +275,28 @@ describe("createConfigStore", () => {
   });
 
   it("stores are isolated from each other", async () => {
-    const tempDirA = fs.mkdtempSync(path.join(os.tmpdir(), "config-test-"));
-    const tempDirB = fs.mkdtempSync(path.join(os.tmpdir(), "config-test-"));
-    try {
-      (readFileMock as MockedFunction<typeof readFile>).mockImplementation(
-        async (dir, _) => {
-          if (dir === path.join(tempDirA, CONFIG_FILE_NAME)) {
-            return JSON.stringify({ agents: { whitelist: ["a"] } });
-          }
-
-          if (dir === path.join(tempDirB, CONFIG_FILE_NAME)) {
-            return JSON.stringify({ agents: { whitelist: ["b"] } });
-          }
-          return "";
-        },
-      );
-      const storeA = createConfigStore();
-      const storeB = createConfigStore();
-      await storeA.loadConfig(tempDirA);
-      await storeB.loadConfig(tempDirB);
-      expect(storeA.getConfig()).toEqual({
+    const tempDirA = "store/a";
+    const tempDirB = "store/b";
+    seedFs({
+      [path.join(tempDirA, CONFIG_FILE_NAME)]: JSON.stringify({
         agents: { whitelist: ["a"] },
-        readModeToggle: {},
-      });
-      expect(storeB.getConfig()).toEqual({
+      }),
+      [path.join(tempDirB, CONFIG_FILE_NAME)]: JSON.stringify({
         agents: { whitelist: ["b"] },
-        readModeToggle: {},
-      });
-    } finally {
-      fs.rmSync(tempDirA, { recursive: true, force: true });
-      fs.rmSync(tempDirB, { recursive: true, force: true });
-    }
+      }),
+    });
+    const storeA = createConfigStore();
+    const storeB = createConfigStore();
+    await storeA.loadConfig(tempDirA);
+    await storeB.loadConfig(tempDirB);
+    expect(storeA.getConfig()).toEqual({
+      agents: { whitelist: ["a"] },
+      readModeToggle: {},
+    });
+    expect(storeB.getConfig()).toEqual({
+      agents: { whitelist: ["b"] },
+      readModeToggle: {},
+    });
   });
 
   it("deep freezes nested objects and arrays", async () => {
