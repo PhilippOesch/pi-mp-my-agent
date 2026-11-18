@@ -26,7 +26,13 @@ import {
     saveFavorites,
     STORAGE_FILENAME,
 } from "./storage.ts";
-import { classify, colorTier, formatCost } from "./tiers.ts";
+import {
+    colorTier,
+    effectiveTier,
+    formatCost,
+    nextTier,
+    type TierOverrides,
+} from "./tiers.ts";
 
 /** How many model rows are shown at once. */
 const MAX_VISIBLE = 10;
@@ -51,6 +57,8 @@ interface SelectorState {
     readonly currentModel: Model<Api> | undefined;
     readonly onResult: (result: SelectorResult) => void;
     readonly onFavoriteChange: () => void;
+    readonly onTierChange: () => void;
+    readonly tierOverrides: TierOverrides;
     readonly header: Text;
     readonly footer: Text;
     readonly searchInput: Input;
@@ -88,7 +96,7 @@ function renderFooter(state: SelectorState): void {
         state.footer.setText("  Esc exit filter · Enter select");
     } else {
         state.footer.setText(
-            "  ↑/↓ move · / filter · Space favorite · Enter select · Ctrl+S set default · Esc cancel",
+            "  ↑/↓ move · / filter · Space favorite · t tier · Enter select · Ctrl+S set default · Esc cancel",
         );
     }
 }
@@ -148,7 +156,7 @@ function renderList(state: SelectorState): void {
         const cursor = isSelected ? "→ " : "  ";
         const favMark = isFav ? "★ " : "  ";
         const currentMark = isCurrent ? "✓ " : "  ";
-        const tier = classify(model);
+        const tier = effectiveTier(model, state.tierOverrides);
         const idText = isSelected
             ? `${SELECTOR_COLORS.selectedId}${model.id}${SELECTOR_COLORS.reset}`
             : model.id;
@@ -234,10 +242,8 @@ function filterModels(state: SelectorState, query: string): void {
     if (!query) {
         state.filteredModels = state.displayModels;
     } else {
-        state.filteredModels = fuzzyFilter(
-            state.displayModels,
-            query,
-            searchText,
+        state.filteredModels = fuzzyFilter(state.displayModels, query, (m) =>
+            searchText(m, state.tierOverrides),
         );
     }
     if (query) {
@@ -274,12 +280,31 @@ function handleSearchModeInput(state: SelectorState, data: string): void {
     state.tui.requestRender();
 }
 
+/** Cycle the tier of the selected model and persist it as an override. */
+function cycleTier(state: SelectorState): void {
+    const model = state.filteredModels[state.selectedIndex];
+    if (!model) return;
+    const key = modelKey(model);
+    state.tierOverrides[key] = nextTier(
+        effectiveTier(model, state.tierOverrides),
+    );
+    // The tier is part of the search text, so re-filter and keep the cursor
+    // on the same model when it survives the filter.
+    filterModels(state, state.searchInput.getValue());
+    state.selectedIndex = Math.max(
+        0,
+        state.filteredModels.findIndex((m) => modelKey(m) === key),
+    );
+    renderList(state);
+    state.onTierChange();
+}
+
 /** Handle a keystroke while navigating the model list. */
 function handleNavModeInput(state: SelectorState, data: string): void {
     // Nav mode: Ctrl+N / Ctrl+P (and arrow keys) move, space toggles
-    // favorite, '/' enters search, enter selects, esc cancels. Other keys
-    // are ignored so the user can safely type letters without accidentally
-    // filtering.
+    // favorite, 't' cycles the tier, '/' enters search, enter selects, esc
+    // cancels. Other keys are ignored so the user can safely type letters
+    // without accidentally filtering.
     if (matchesKey(data, Key.up) || matchesKey(data, Key.ctrl("p"))) {
         moveSelection(state, -1);
         state.tui.requestRender();
@@ -292,6 +317,11 @@ function handleNavModeInput(state: SelectorState, data: string): void {
     }
     if (matchesKey(data, Key.space)) {
         toggleFavorite(state);
+        state.tui.requestRender();
+        return;
+    }
+    if (data === "t") {
+        cycleTier(state);
         state.tui.requestRender();
         return;
     }
@@ -337,13 +367,15 @@ function handleInput(state: SelectorState, data: string): void {
 }
 
 /** Build the selector UI and wire up its input handling. */
-function createSelector(
+export function createSelector(
     tui: { requestRender: () => void },
     ctx: ExtensionContext,
     allModels: readonly Model<Api>[],
     favoriteList: string[],
+    tierOverrides: TierOverrides,
     onResult: (result: SelectorResult) => void,
     onFavoriteChange: () => void,
+    onTierChange: () => void,
 ): {
     render: (width: number) => string[];
     invalidate: () => void;
@@ -381,6 +413,8 @@ function createSelector(
         currentModel,
         onResult,
         onFavoriteChange,
+        onTierChange,
+        tierOverrides,
         header,
         footer,
         searchInput,
@@ -413,6 +447,7 @@ export async function openSelector(
     pi: ExtensionAPI,
     ctx: ExtensionContext,
     favoriteList: string[],
+    tierOverrides: TierOverrides,
 ): Promise<Model<Api> | null> {
     const allModels = ctx.modelRegistry.getAvailable();
     if (allModels.length === 0) {
@@ -429,11 +464,23 @@ export async function openSelector(
         };
 
         void ctx.ui.custom<Model<Api> | null>((tui, _theme, _kb, done) => {
+            const save = () => {
+                try {
+                    saveFavorites(favoriteList, tierOverrides);
+                } catch (error) {
+                    ctx.ui.notify(
+                        `Failed to save ${STORAGE_FILENAME}: ${String(error)}`,
+                        "error",
+                    );
+                }
+            };
+
             return createSelector(
                 tui,
                 ctx,
                 allModels,
                 favoriteList,
+                tierOverrides,
                 async (result) => {
                     if (result.kind === "cancel") {
                         done(null);
@@ -470,16 +517,8 @@ export async function openSelector(
                     done(result.model);
                     finish(result.model);
                 },
-                () => {
-                    try {
-                        saveFavorites(favoriteList);
-                    } catch (error) {
-                        ctx.ui.notify(
-                            `Failed to save ${STORAGE_FILENAME}: ${String(error)}`,
-                            "error",
-                        );
-                    }
-                },
+                save,
+                save,
             );
         });
     });

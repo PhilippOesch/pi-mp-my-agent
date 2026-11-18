@@ -6,6 +6,8 @@ import {
     getAgentDir,
 } from "@earendil-works/pi-coding-agent";
 
+import { isTier, type TierOverrides } from "./tiers.ts";
+
 /** Name of the favorites file inside the agent directory. */
 export const STORAGE_FILENAME = "favorite-models.json";
 
@@ -14,6 +16,7 @@ const STORAGE_VERSION = 1;
 export interface StorageShape {
     version: number;
     favorites: string[];
+    tierOverrides: TierOverrides;
 }
 
 export function storageFilePath(): string {
@@ -37,10 +40,39 @@ export function loadFavorites(): string[] {
     }
 }
 
-export function saveFavorites(favorites: string[]): void {
+export function loadTierOverrides(): TierOverrides {
+    const path = storageFilePath();
+    if (!existsSync(path)) return {};
+    try {
+        const parsed = JSON.parse(
+            readFileSync(path, "utf-8"),
+        ) as Partial<StorageShape>;
+        if (!parsed || typeof parsed !== "object") return {};
+        const raw = parsed.tierOverrides;
+        if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+            return {};
+        }
+        const result: TierOverrides = {};
+        for (const [key, value] of Object.entries(raw)) {
+            if (isTier(value)) result[key] = value;
+        }
+        return result;
+    } catch {
+        return {};
+    }
+}
+
+export function saveFavorites(
+    favorites: string[],
+    tierOverrides: TierOverrides,
+): void {
     const dir = getAgentDir();
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-    const payload: StorageShape = { version: STORAGE_VERSION, favorites };
+    const payload: StorageShape = {
+        version: STORAGE_VERSION,
+        favorites,
+        tierOverrides,
+    };
     writeFileSync(
         storageFilePath(),
         JSON.stringify(payload, null, 2) + "\n",

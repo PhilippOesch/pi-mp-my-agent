@@ -44,6 +44,35 @@ export const MODEL_TIERS: Record<string, Tier> = {
     "step-5-preview-free": "free",
 };
 
+/** User-set tier overrides, keyed by `${provider}/${model.id}`. Win over `MODEL_TIERS`. */
+export type TierOverrides = Record<string, Tier>;
+
+/** All tiers except `unknown`, in cycle order for the `t` key in the picker. */
+const TIER_CYCLE: readonly Tier[] = ["free", "low", "mid", "high", "maxi"];
+
+/** Runtime guard for tier strings read from storage. */
+export function isTier(value: unknown): value is Tier {
+    const allTiers: readonly Tier[] = [...TIER_CYCLE, "unknown"];
+    return typeof value === "string" && allTiers.includes(value as Tier);
+}
+
+/** The override key for a model: `${provider}/${model.id}`, like favorites. */
+export function tierKey(model: Pick<Model<Api>, "id" | "provider">): string {
+    return `${model.provider}/${model.id}`;
+}
+
+/**
+ * Next tier when cycling with the `t` key.
+ *
+ * Order is `free → low → mid → high → maxi → free`; `unknown` starts at
+ * `free`.
+ */
+export function nextTier(current: Tier): Tier {
+    if (current === "unknown") return "free";
+    const index = TIER_CYCLE.indexOf(current);
+    return TIER_CYCLE[(index + 1) % TIER_CYCLE.length]!;
+}
+
 /**
  * ANSI 256-color escape for each tier label. Picked for dark terminals: every
  * tone clears 4:1 contrast against a typical #1e1e1e background. The literal
@@ -64,8 +93,19 @@ export function colorTier(tier: Tier): string {
 }
 
 /** Classify a model into a cost tier by looking up its id in the tier map. */
-export function classify(model: Pick<Model<Api>, "id">): Tier {
+export function classify(model: Pick<Model<Api>, "id" | "provider">): Tier {
     return MODEL_TIERS[model.id] ?? "unknown";
+}
+
+/**
+ * Effective tier of a model: user override first, then the hardcoded map,
+ * then `unknown`.
+ */
+export function effectiveTier(
+    model: Pick<Model<Api>, "id" | "provider">,
+    overrides?: TierOverrides,
+): Tier {
+    return overrides?.[tierKey(model)] ?? classify(model);
 }
 
 /**
