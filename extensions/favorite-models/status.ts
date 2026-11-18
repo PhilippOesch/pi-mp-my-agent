@@ -1,13 +1,21 @@
 import type { Api, Model } from "@earendil-works/pi-ai";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 
-import { classify, colorTier, formatCost } from "./tiers.ts";
+import {
+    colorTier,
+    effectiveTier,
+    formatCost,
+    type TierOverrides,
+} from "./tiers.ts";
 
 const STATUS_KEY = "tier";
 
 /** Footer status line for the current model: `tier:<tier> <id> · $in/$out`. */
-export function renderStatus(model: Pick<Model<Api>, "id" | "cost">): string {
-    const tier = classify(model);
+export function renderStatus(
+    model: Pick<Model<Api>, "id" | "provider" | "cost">,
+    tierOverrides?: TierOverrides,
+): string {
+    const tier = effectiveTier(model, tierOverrides);
     const inputFormatted = formatCost(model.cost?.input);
     const outputFormatted = formatCost(model.cost?.output);
 
@@ -17,9 +25,12 @@ export function renderStatus(model: Pick<Model<Api>, "id" | "cost">): string {
     return `tier:${colorTier(tier)} ${model.id}`;
 }
 
-export function updateStatus(ctx: ExtensionContext): void {
+export function updateStatus(
+    ctx: ExtensionContext,
+    tierOverrides?: TierOverrides,
+): void {
     if (ctx.model) {
-        ctx.ui.setStatus(STATUS_KEY, renderStatus(ctx.model));
+        ctx.ui.setStatus(STATUS_KEY, renderStatus(ctx.model, tierOverrides));
     } else {
         ctx.ui.setStatus(STATUS_KEY, undefined);
     }

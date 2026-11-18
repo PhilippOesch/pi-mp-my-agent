@@ -1,6 +1,6 @@
 import type { Api, Model } from "@earendil-works/pi-ai";
 
-import { classify } from "./tiers.ts";
+import { effectiveTier, type TierOverrides } from "./tiers.ts";
 
 export function modelKey(model: Model<Api>): string {
     return `${model.provider}/${model.id}`;
@@ -15,8 +15,12 @@ export function isFavorite(
 
 export function searchText(
     model: Pick<Model<Api>, "id" | "provider" | "name">,
+    tierOverrides?: TierOverrides,
 ): string {
-    return `${model.id} ${model.provider} ${model.name} ${classify(model)}`;
+    return `${model.id} ${model.provider} ${model.name} ${effectiveTier(
+        model,
+        tierOverrides,
+    )}`;
 }
 
 /**

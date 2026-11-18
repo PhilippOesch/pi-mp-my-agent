@@ -33,6 +33,24 @@ This makes skills such as `tdd`, `refactor`, `code-review`, `research`, `writing
 - `themes/` — Custom themes
 - `agents/` — Subagent definitions loaded by the `subagents` extension
 
+## Favorite models
+
+The `favorite-models` extension adds a favorites-first model picker with cost
+tier labels.
+
+- `/fmodel` (or `Ctrl+L`) opens the selector: favorites first, each row shows
+  the model's cost tier and per-1M-token prices.
+- In nav mode: `↑/↓` move, `Space` toggles favorite, `t` cycles the tier of the
+  highlighted model, `Enter` switches, `Ctrl+S` switches and saves as global
+  default, `/` filters, `Esc` cancels.
+- `t` cycles `free → low → mid → high → maxi → free` (unknown starts at
+  `free`). The chosen tier is stored as a user override that wins over the
+  hardcoded tier map; it feeds the row display, the fuzzy filter, and the
+  `tier:` footer status.
+- Data lives in `~/.pi/agent/favorite-models.json` (`favorites` array plus a
+  `tierOverrides` map keyed by `provider/modelId`). Remove an override by
+  editing the file.
+
 ## Personal config
 
 This repo is a package, not a runnable `~/.pi/agent` directory. In your
