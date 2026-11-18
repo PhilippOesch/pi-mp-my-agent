@@ -28,3 +28,6 @@ favorite-models.json
 /extensions/subagents/plans/
 /extensions/subagents/package-lock.json
 /extensions/memory/package-lock.json
+
+# ignore worktree
+.worktrees/
