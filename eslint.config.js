@@ -13,6 +13,7 @@ export default tseslint.config(
             "**/*.mjs",
             "**/*.cjs",
             "extensions/herdr-agent-state.ts",
+            ".worktrees/**",
         ],
     },
     eslint.configs.recommended,

@@ -140,7 +140,10 @@ function renderCollapsedStep(
 ): string {
   const icon = ui.icons.singleResultToIcon(result);
   const displayItems = getDisplayItems(result.messages);
-  const header = `\n\n${theme.fg("muted", label)}${theme.fg("accent", result.agent)} ${icon}`;
+  const modelSuffix = result.model
+    ? theme.fg("muted", ` (${result.model})`)
+    : "";
+  const header = `\n\n${theme.fg("muted", label)}${theme.fg("accent", result.agent)}${modelSuffix} ${icon}`;
   if (displayItems.length === 0) {
     return `${header}\n${theme.fg("muted", emptyLabel)}`;
   }

@@ -33,6 +33,47 @@ const running = (): SingleResult => ({
   },
 });
 
+// startedAt: undefined makes renderResult skip progress lines, so the collapsed body is asserted directly.
+const finished = (model?: string): SingleResult => ({
+  ...running(),
+  exitCode: 0,
+  phase: "completed",
+  startedAt: undefined,
+  lastActivityAt: undefined,
+  pid: undefined,
+  activeTools: {},
+  model,
+});
+
+const renderParallelCollapsed = (results: SingleResult[]): string =>
+  renderResult(
+    {
+      content: [],
+      details: {
+        mode: "parallel",
+        results,
+      },
+    },
+    { expanded: false },
+    theme,
+    undefined,
+  )
+    .render(200)
+    .join("\n");
+
+describe("collapsed step rendering", () => {
+  it("shows the model after the agent name when set", () => {
+    const text = renderParallelCollapsed([finished("provider/model")]);
+    expect(text).toContain("worker (provider/model) ✓");
+  });
+
+  it("omits the model placeholder when unset", () => {
+    const text = renderParallelCollapsed([finished()]);
+    expect(text).toContain("worker ✓");
+    expect(text).not.toContain("worker (");
+  });
+});
+
 describe("progress rendering", () => {
   it("shows elapsed and idle time without treating a heartbeat as activity", () => {
     expect(formatProgress(running(), 7000)).toBe(
