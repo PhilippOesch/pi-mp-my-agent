@@ -52,8 +52,9 @@ const TIER_CYCLE: readonly Tier[] = ["free", "low", "mid", "high", "maxi"];
 
 /** Runtime guard for tier strings read from storage. */
 export function isTier(value: unknown): value is Tier {
-    const allTiers: readonly Tier[] = [...TIER_CYCLE, "unknown"];
-    return typeof value === "string" && allTiers.includes(value as Tier);
+    // Typed as plain strings so untrusted values need no cast to check.
+    const allTiers: readonly string[] = [...TIER_CYCLE, "unknown"];
+    return typeof value === "string" && allTiers.includes(value);
 }
 
 /** The override key for a model: `${provider}/${model.id}`, like favorites. */
@@ -93,7 +94,7 @@ export function colorTier(tier: Tier): string {
 }
 
 /** Classify a model into a cost tier by looking up its id in the tier map. */
-export function classify(model: Pick<Model<Api>, "id" | "provider">): Tier {
+export function classify(model: Pick<Model<Api>, "id">): Tier {
     return MODEL_TIERS[model.id] ?? "unknown";
 }
 
