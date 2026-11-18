@@ -21,6 +21,7 @@ import {
     modelKey,
     searchText,
 } from "./models.ts";
+import { updateStatus } from "./status.ts";
 import {
     saveDefaultModel,
     saveFavorites,
@@ -473,6 +474,10 @@ export async function openSelector(
                         "error",
                     );
                 }
+                // Cycling the active model's tier and then cancelling would
+                // otherwise leave a stale footer tier until the next
+                // model_select / session_start.
+                updateStatus(ctx, tierOverrides);
             };
 
             return createSelector(
