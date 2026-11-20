@@ -4,6 +4,7 @@ import path from "node:path";
 import { parseFrontmatter } from "@earendil-works/pi-coding-agent";
 
 const AGENTS_DIR = "agents";
+const SKILLS_DIR = "skills";
 const POINTER_RE = /@agents\/([a-zA-Z0-9_\-./]+)/g;
 
 function trimTrailingPunctuation(value) {
@@ -17,10 +18,31 @@ function listMarkdownFiles(dir) {
         .map((entry) => path.join(dir, entry.name));
 }
 
+function listSkillNames() {
+    if (!fs.existsSync(SKILLS_DIR)) return new Set();
+    return new Set(
+        fs
+            .readdirSync(SKILLS_DIR, { withFileTypes: true })
+            .filter((entry) => entry.isDirectory())
+            .map((entry) => entry.name),
+    );
+}
+
+function declaredSkills(frontmatter) {
+    const raw = frontmatter?.skills;
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw.map(String);
+    return String(raw)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+}
+
 function check() {
     const files = listMarkdownFiles(AGENTS_DIR);
     const errors = [];
     const agents = [];
+    const availableSkills = listSkillNames();
 
     for (const file of files) {
         const content = fs.readFileSync(file, "utf-8");
@@ -40,6 +62,14 @@ function check() {
         if (!hasDescription)
             errors.push(`${file}: agent frontmatter missing 'description'`);
         if (hasName && hasDescription) agents.push(file);
+
+        for (const skill of declaredSkills(frontmatter)) {
+            if (!availableSkills.has(skill)) {
+                errors.push(
+                    `${file}: declares skill '${skill}' but no '${SKILLS_DIR}/${skill}/SKILL.md' exists in this package`,
+                );
+            }
+        }
     }
 
     for (const file of files) {

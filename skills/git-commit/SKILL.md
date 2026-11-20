@@ -1,7 +1,6 @@
 ---
-description: create a commit message
-agent: build
-model: minimax/minimax-m3
+name: git-commit
+description: Generate a Conventional Commit message for the staged diff. Use when the user asks for a commit message.
 ---
 
 # git commit

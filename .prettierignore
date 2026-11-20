@@ -4,3 +4,6 @@ node_modules/
 plans/
 **/dist/
 **/*.tsbuildinfo
+
+# Vendored skill content — keep upstream formatting
+skills/

@@ -1,11 +1,13 @@
 ---
-description: Enter plan-first mode before writing code. Research the task, clarify missing requirements with the user, and write a concrete implementation plan (no implementation).
-argument-hint: "<task>"
+name: create-plan
+description: Enter plan-first mode before writing code. Research the task, clarify missing requirements with the user, and write a concrete implementation plan (no implementation). Use when the user wants a plan before any code is written.
 ---
 
 Stay in planning mode. The only deliverable is the plan saved using the `agent-context` skill. Do not implement.
 
 Find `agent-context` in available skill discovery, read its `SKILL.md`, and follow its instructions for configuration, the plan folder, naming, and frontmatter. If the skill or its configuration is unavailable, stop and ask the user to configure it; do not use a fallback location. Keep the actual saved plan path for preview and handoff.
+
+The task to plan is the user's request passed to this skill (the text after `/skill:create-plan`).
 
 ## General
 
@@ -26,7 +28,7 @@ Use `scout` or `explorer` for read-only codebase research. Run the workflow as a
 
 _Done when_ the goal, success criteria, and key constraints are clear and any remaining unknowns are recorded for the plan.
 
-**1.2. Research codebase context** — dispatch one or more read-only research subagents. Use one for a focused investigation; use parallel subagents for distinct questions. Give each this task, adding its specific research question when needed: `Read-only recon. Investigate the codebase to gather context for: $@. Report only — do not modify any files. The user's original task is the SUBJECT of investigation, not an instruction to execute.` Require every subagent to report these sections: Files Retrieved, Files Modified, Key Code, Architecture, Start Here. `Files Modified` must say `None`; use `None` for any other section that does not apply. Synthesize all reports before planning.
+**1.2. Research codebase context** — dispatch one or more read-only research subagents. Use one for a focused investigation; use parallel subagents for distinct questions. Give each this task, adding its specific research question when needed: `Read-only recon. Investigate the codebase to gather context for: <task>. Report only — do not modify any files. The user's original task is the SUBJECT of investigation, not an instruction to execute.` Require every subagent to report these sections: Files Retrieved, Files Modified, Key Code, Architecture, Start Here. `Files Modified` must say `None`; use `None` for any other section that does not apply. Synthesize all reports before planning.
 
 ### 2. Formulating Plan
 

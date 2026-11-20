@@ -1,7 +1,7 @@
 {
     "name": "pi-mp-my-agent",
     "version": "0.1.0",
-    "description": "Personal Pi coding agent package with extensions, prompts, themes, and agents.",
+    "description": "Personal Pi coding agent package with extensions, skills, themes, and agents.",
     "type": "module",
     "keywords": [
         "pi-package"
@@ -23,7 +23,7 @@
     },
     "files": [
         "extensions",
-        "prompts",
+        "skills",
         "themes",
         "agents",
         "LICENSE",
@@ -47,8 +47,8 @@
             "./extensions/todo/index.ts",
             "./extensions/working-indicator.ts"
         ],
-        "prompts": [
-            "./prompts/*.md"
+        "skills": [
+            "./skills/*"
         ],
         "themes": [
             "./themes/*.json"

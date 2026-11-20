@@ -1,6 +1,6 @@
 # pi-mp-my-agent
 
-A Pi package with personal extensions, prompts, themes, and agents.
+A self-contained Pi package with extensions, skills, themes, and agents. All skills referenced by agents ship in `skills/`, so no external skill collection is required.
 
 ## Install
 
@@ -16,22 +16,26 @@ Or use a local copy during development:
 pi install ./path/to/pi-config
 ```
 
-## Required skills
-
-Some agents in this package expect skills from the companion skill collection:
-
-```bash
-pi install git:github.com/PhilippOesch/agent-skills
-```
-
-This makes skills such as `tdd`, `refactor`, `code-review`, `research`, `writing-for-agents`, `ui-design`, and `grill-me` available to the subagents.
-
 ## Contents
 
 - `extensions/` — Pi extensions
-- `prompts/` — Prompt templates
+- `skills/` — Skills shipped with this package. Five are referenced by agents (`tdd`, `refactor`, `code-review`, `research`, `writing-for-agents`); the rest are workflow skills converted from the former prompt templates (`create-plan`, `git-commit`, `implement-plan`, `implement-and-review`, `topic-research`). `topic-research` is named differently from `research` because skill name collisions keep only the first discovered skill.
 - `themes/` — Custom themes
 - `agents/` — Subagent definitions loaded by the `subagents` extension
+
+## Skills
+
+Use skills via `/skill:name` (arguments after the name are passed as the user request):
+
+```text
+/skill:create-plan add caching to the session store
+/skill:implement-plan my-feature
+/skill:implement-and-review add input validation to API endpoints
+/skill:topic-research how does the auth flow work
+/skill:git-commit
+```
+
+`scripts/check-agents.mjs` fails if an agent declares a `skills:` entry that has no matching `skills/<name>/SKILL.md` in this package, so the package stays self-contained.
 
 ## Favorite models
 
@@ -103,7 +107,7 @@ Load the package locally for one Pi session without installing it:
 pi -e ./path/to/pi-mp-my-agent
 ```
 
-Inside Pi, run `/reload` after making changes to extensions, prompts, themes, or agents so the runtime picks them up.
+Inside Pi, run `/reload` after making changes to extensions, skills, themes, or agents so the runtime picks them up.
 
 To install the package persistently (personal scope):
 
