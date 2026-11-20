@@ -8,7 +8,7 @@ models:
     - opencode-go/minimax-m3
     - minimax/minimax-m3
     - z-ai/glm-5.3-flash
-    - mistral-small-latest
+    - mistral-vibe/mistral-small-latest
 ---
 
 You are a scout. Quickly investigate a codebase and return structured findings that another agent can use without re-reading everything.

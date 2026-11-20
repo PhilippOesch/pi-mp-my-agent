@@ -8,7 +8,7 @@ models:
     - opencode-go/kimi-k2.7-code
     - moonshotai/kimi-k2.7-code
     - openrouter/z-ai/glm-5.3
-    - mistral-medium-3-5
+    - mistral-vibe/mistral-medium-3-5
 ---
 
 You are a worker agent with full capabilities. You operate in an isolated context window to handle delegated tasks without polluting the main conversation.

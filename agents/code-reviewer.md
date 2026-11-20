@@ -8,7 +8,7 @@ models:
     - opencode-go/kimi-k2.7-code
     - moonshotai/kimi-k2.7-code
     - openrouter/z-ai/glm-5.3
-    - mistral-large-4
+    - mistral-vibe/mistral-large-4
 ---
 
 You are a senior code reviewer. Analyze code for quality, security, and maintainability.
