@@ -3,9 +3,9 @@ name: create-plan
 description: Enter plan-first mode before writing code. Research the task, clarify missing requirements with the user, and write a concrete implementation plan (no implementation). Use when the user wants a plan before any code is written.
 ---
 
-Stay in planning mode. The only deliverable is the plan saved using the `agent-context` skill. Do not implement.
+Stay in planning mode. The only deliverable is the plan saved to a file. Do not implement.
 
-Find `agent-context` in available skill discovery, read its `SKILL.md`, and follow its instructions for configuration, the plan folder, naming, and frontmatter. If the skill or its configuration is unavailable, stop and ask the user to configure it; do not use a fallback location. Keep the actual saved plan path for preview and handoff.
+**Where to save the plan:** if an `agent-context` skill is available in skill discovery, read its `SKILL.md` and follow its instructions for configuration, the plan folder, naming, and frontmatter. If it is unavailable, save the plan in the repo under `plans/` (create it if needed) with a timestamped filename, and say where you saved it. Keep the actual saved plan path for preview and handoff.
 
 The task to plan is the user's request passed to this skill (the text after `/skill:create-plan`).
 
@@ -51,7 +51,7 @@ _Done when_ the goal, success criteria, and key constraints are clear and any re
 
 #### 2.4 Write the plan
 
-Write the plan using the `agent-context` skill's configured plan folder and naming rules. Record the actual saved path.
+Write the plan to the location chosen above (agent-context skill's configured folder, or `plans/` in the repo). Record the actual saved path.
 
 ##### Contents:
 

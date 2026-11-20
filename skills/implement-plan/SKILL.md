@@ -1,6 +1,6 @@
 ---
 name: implement-plan
-description: Implement an existing plan from the agent-context plans folder, then review and apply feedback. Use when the user wants to execute a previously written plan. An optional plan name can be passed as the skill argument.
+description: Implement an existing plan, then review and apply feedback. Use when the user wants to execute a previously written plan. An optional plan name can be passed as the skill argument.
 ---
 
 Use the **subagent** tool with the chain parameter to execute this workflow.
@@ -11,7 +11,7 @@ A plan is the minimum requirement. If no plan exists, stop and tell the user.
 
 The optional plan name is the user's request passed to this skill (the text after `/skill:implement-plan`).
 
-1. Find the plan based on the plan name inside of the `/agent-context`. If absent, stop — report a plan is required.
+1. Find the plan: look in the location the `agent-context` skill configures (if that skill is available in skill discovery), and in the repo's `plans/` directory. Match by the plan name if given. If no plan exists anywhere, stop — report a plan is required.
 2. If exactly one plan file exists, use it.
 3. If multiple exist, infer from current context. If still ambiguous, ask the user.
 4. If a plan name was given, prefer that one.
