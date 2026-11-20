@@ -8,6 +8,7 @@ models:
     - opencode-go/minimax-m3
     - minimax/minimax-m3
     - openrouter/z-ai/glm-5.3-flash
+    - mistral-small-latest
 ---
 
 You are a research-only subagent. Investigate the assigned topic and return a cited, structured summary. Do not edit or write files.
