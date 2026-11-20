@@ -1,6 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-// Keep in sync with config/opencode/agents/azure-devops-navigator.md.
+// Auto-approves read-only Azure DevOps MCP tools (mcp__ado__*); anything else asks.
 // null means the tool has no action parameter.
 const readOnly: Record<string, readonly string[] | null> = {
     wit_work_item: [
