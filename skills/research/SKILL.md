@@ -1,6 +1,6 @@
 ---
 name: research
-description: Research a question or topic against high-trust primary sources. Splits the topic into angles, dispatches scout/explorer/Figma subagents in parallel, and synthesizes one structured answer. If the user asks for a saved write-up, also writes the findings to a Markdown file in the repo. Use when the user wants a topic researched, docs or API facts gathered, or reading legwork delegated to a background agent.
+description: Research a question or topic against high-trust primary sources. Splits the topic into angles, dispatches scout/explorer subagents in parallel, and synthesizes one structured answer. If the user asks for a saved write-up, also writes the findings to a Markdown file in the repo. Use when the user wants a topic researched, docs or API facts gathered, or reading legwork delegated to a background agent. If a Figma angle arises and a `figma-navigator` agent is available (installed outside this package), dispatch it too.
 ---
 
 The topic is the user's request passed to this skill (the text after `/skill:research`).
@@ -14,18 +14,18 @@ This is research-only: do not modify files unless the user explicitly asks for a
 2. Dispatch relevant subagents in parallel using the **subagent** tool's `tasks` array:
     - For each codebase angle, assign `scout` with the angle and overall topic.
     - For each web angle, assign `explorer` with the angle and overall topic.
-    - For each Figma angle, assign `figma-navigator` with the angle and overall topic. Use it to inspect Figma files, nodes, variables, or design-system context; include any supplied Figma URL and node ID. Keep the task read-only.
+    - For each Figma angle, assign `figma-navigator` if that agent is available; use it to inspect Figma files, nodes, variables, or design-system context; include any supplied Figma URL and node ID. Keep the task read-only.
 
 3. Verify against primary sources: investigate against official docs, source code, specs, and first-party APIs, not secondary write-ups. Follow every claim back to the source that owns it.
 
 4. Synthesize the returned results into one structured answer:
     - Local findings: files, code, and architecture from scouts.
     - Web findings: cited summaries from explorers.
-    - Figma findings: design details and source links from the navigator.
+    - Figma findings (if researched): design details and source links from the navigator.
     - Key takeaways.
     - Open questions or conflicts between sources.
 
-Done when the synthesis is returned and every factual claim is tied to a scout result, a web citation, a Figma result, or explicitly flagged uncertain.
+Done when the synthesis is returned and every factual claim is tied to a scout result, a web citation, a Figma result, or explicitly flagged uncertain. If no agent handled an angle, flag that angle's claims as uncertain rather than dropping it.
 
 ## Save mode
 
