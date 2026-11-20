@@ -19,7 +19,7 @@ pi install ./path/to/pi-config
 ## Contents
 
 - `extensions/` — Pi extensions
-- `skills/` — Skills shipped with this package. Five are referenced by agents (`tdd`, `refactor`, `code-review`, `research`, `writing-for-agents`); the rest are workflow skills converted from the former prompt templates (`create-plan`, `git-commit`, `implement-plan`, `implement-and-review`, `topic-research`). `topic-research` is named differently from `research` because skill name collisions keep only the first discovered skill.
+- `skills/` — Skills shipped with this package. Five are referenced by agents (`tdd`, `refactor`, `code-review`, `research`, `writing-for-agents`); the rest are workflow skills converted from the former prompt templates (`create-plan`, `git-commit`, `implement-plan`, `implement-and-review`). The `research` skill covers both chat synthesis and saved write-ups ("save mode").
 - `themes/` — Custom themes
 - `agents/` — Subagent definitions loaded by the `subagents` extension
 
@@ -31,7 +31,7 @@ Use skills via `/skill:name` (arguments after the name are passed as the user re
 /skill:create-plan add caching to the session store
 /skill:implement-plan my-feature
 /skill:implement-and-review add input validation to API endpoints
-/skill:topic-research how does the auth flow work
+/skill:research how does the auth flow work
 /skill:git-commit
 ```
 
