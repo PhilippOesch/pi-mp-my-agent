@@ -31,7 +31,6 @@ Use skills via `/skill:name` (arguments after the name are passed as the user re
 /skill:create-plan add caching to the session store
 /skill:implement-plan my-feature
 /skill:implement-and-review add input validation to API endpoints
-/skill:research how does the auth flow work
 /skill:git-commit
 ```
 
