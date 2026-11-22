@@ -42,6 +42,7 @@
             "./extensions/mcp-approval.ts",
             "./extensions/memory/src/index.ts",
             "./extensions/path-blacklist/index.ts",
+            "./extensions/skills-whitelist/index.ts",
             "./extensions/read-mode-toggle/index.ts",
             "./extensions/subagents/src/index.ts",
             "./extensions/todo/index.ts",

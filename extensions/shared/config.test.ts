@@ -26,7 +26,11 @@ describe("loadConfig", () => {
 
   it("returns defaults when the config file is missing", async () => {
     const config = await loadConfig(tempDir);
-    expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
+    expect(config).toEqual({
+      agents: { whitelist: [] },
+      skills: { whitelist: [] },
+      readModeToggle: {},
+    });
     expect(Object.isFrozen(config)).toBe(true);
     expect(warnSpy).not.toHaveBeenCalled();
   });
@@ -40,6 +44,7 @@ describe("loadConfig", () => {
     const config = await loadConfig(tempDir);
     expect(config).toEqual({
       agents: { whitelist: ["code-reviewer", "worker"] },
+      skills: { whitelist: [] },
       readModeToggle: {},
     });
     expect(Object.isFrozen(config)).toBe(true);
@@ -51,7 +56,11 @@ describe("loadConfig", () => {
       [path.join(tempDir, CONFIG_FILE_NAME)]: JSON.stringify({}),
     });
     const config = await loadConfig(tempDir);
-    expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
+    expect(config).toEqual({
+      agents: { whitelist: [] },
+      skills: { whitelist: [] },
+      readModeToggle: {},
+    });
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
@@ -60,7 +69,11 @@ describe("loadConfig", () => {
       [path.join(tempDir, CONFIG_FILE_NAME)]: "{ not json",
     });
     const config = await loadConfig(tempDir);
-    expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
+    expect(config).toEqual({
+      agents: { whitelist: [] },
+      skills: { whitelist: [] },
+      readModeToggle: {},
+    });
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("parse error"),
     );
@@ -73,7 +86,11 @@ describe("loadConfig", () => {
       }),
     });
     const config = await loadConfig(tempDir);
-    expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
+    expect(config).toEqual({
+      agents: { whitelist: [] },
+      skills: { whitelist: [] },
+      readModeToggle: {},
+    });
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("failed validation"),
     );
@@ -90,7 +107,11 @@ describe("loadConfig", () => {
       }),
     });
     const config = await loadConfig(tempDir);
-    expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
+    expect(config).toEqual({
+      agents: { whitelist: [] },
+      skills: { whitelist: [] },
+      readModeToggle: {},
+    });
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("failed validation"),
     );
@@ -102,7 +123,11 @@ describe("loadConfig", () => {
       throw new MockFsError("UNKNOWN", "mock file-system error");
     });
     const config = await loadConfig(tempDir);
-    expect(config).toEqual({ agents: { whitelist: [] }, readModeToggle: {} });
+    expect(config).toEqual({
+      agents: { whitelist: [] },
+      skills: { whitelist: [] },
+      readModeToggle: {},
+    });
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("file-system error"),
     );
@@ -118,9 +143,11 @@ describe("loadConfig", () => {
     const config = await loadConfig(tempDir);
     expect(config).toEqual({
       agents: { whitelist: ["worker"] },
+      skills: { whitelist: [] },
       readModeToggle: { keybinding: "shift+ctrl+pageUp" },
     });
     expect(Object.isFrozen(config.readModeToggle)).toBe(true);
+    expect(Object.isFrozen(config.skills)).toBe(true);
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
@@ -136,6 +163,7 @@ describe("loadConfig", () => {
       const config = await loadConfig(tempDir);
       expect(config).toEqual({
         agents: { whitelist: ["worker"] },
+        skills: { whitelist: [] },
         readModeToggle: {},
       });
       expect(Object.isFrozen(config.readModeToggle)).toBe(true);
@@ -154,6 +182,7 @@ describe("loadConfig", () => {
     });
     expect(await loadConfig(tempDir)).toEqual({
       agents: { whitelist: ["worker"] },
+      skills: { whitelist: [] },
       readModeToggle: {},
     });
     expect(warnSpy).toHaveBeenCalledWith(
@@ -170,6 +199,7 @@ describe("loadConfig", () => {
     });
     expect(await loadConfig(tempDir)).toEqual({
       agents: { whitelist: [] },
+      skills: { whitelist: [] },
       readModeToggle: {},
     });
     expect(warnSpy).toHaveBeenCalledWith(
@@ -269,9 +299,11 @@ describe("createConfigStore", () => {
     expect(store.getConfig()).toBe(loaded);
     expect(store.getConfig()).toEqual({
       agents: { whitelist: ["code-reviewer"] },
+      skills: { whitelist: [] },
       readModeToggle: {},
     });
     expect(store.get("agents")).toEqual({ whitelist: ["code-reviewer"] });
+    expect(store.get("skills")).toEqual({ whitelist: [] });
   });
 
   it("stores are isolated from each other", async () => {
@@ -291,10 +323,12 @@ describe("createConfigStore", () => {
     await storeB.loadConfig(tempDirB);
     expect(storeA.getConfig()).toEqual({
       agents: { whitelist: ["a"] },
+      skills: { whitelist: [] },
       readModeToggle: {},
     });
     expect(storeB.getConfig()).toEqual({
       agents: { whitelist: ["b"] },
+      skills: { whitelist: [] },
       readModeToggle: {},
     });
   });
@@ -306,6 +340,43 @@ describe("createConfigStore", () => {
     expect(Object.isFrozen(config)).toBe(true);
     expect(Object.isFrozen(config.agents)).toBe(true);
     expect(Object.isFrozen(config.agents.whitelist)).toBe(true);
+    expect(Object.isFrozen(config.skills)).toBe(true);
+    expect(Object.isFrozen(config.skills.whitelist)).toBe(true);
     expect(Object.isFrozen(config.readModeToggle)).toBe(true);
+  });
+
+  it("parses skills whitelist from config", async () => {
+    seedFs({
+      [path.join(tempDir, CONFIG_FILE_NAME)]: JSON.stringify({
+        skills: { whitelist: ["tdd", "refactor"] },
+      }),
+    });
+    const config = await loadConfig(tempDir);
+    expect(config).toEqual({
+      agents: { whitelist: [] },
+      skills: { whitelist: ["tdd", "refactor"] },
+      readModeToggle: {},
+    });
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it("validates skills whitelist is an array", async () => {
+    seedFs({
+      [path.join(tempDir, CONFIG_FILE_NAME)]: JSON.stringify({
+        skills: { whitelist: "not-an-array" },
+      }),
+    });
+    const config = await loadConfig(tempDir);
+    expect(config).toEqual({
+      agents: { whitelist: [] },
+      skills: { whitelist: [] },
+      readModeToggle: {},
+    });
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("failed validation"),
+    );
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/skills\/whitelist/),
+    );
   });
 });

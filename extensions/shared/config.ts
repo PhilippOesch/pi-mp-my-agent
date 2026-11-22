@@ -58,6 +58,12 @@ export const PackageConfigSchema = Type.Object(
       },
       { default: {}, additionalProperties: false },
     ),
+    skills: Type.Object(
+      {
+        whitelist: Type.Array(Type.String(), { default: [] }),
+      },
+      { default: {}, additionalProperties: false },
+    ),
     readModeToggle: Type.Object(
       { keybinding: Type.Optional(Type.String()) },
       { default: {}, additionalProperties: false },
@@ -83,7 +89,11 @@ function deepFreeze<T>(value: T): T {
 }
 
 function defaultConfig(): Config {
-  return deepFreeze({ agents: { whitelist: [] }, readModeToggle: {} });
+  return deepFreeze({
+    agents: { whitelist: [] },
+    skills: { whitelist: [] },
+    readModeToggle: {},
+  });
 }
 
 function formatValidationErrors(value: unknown): string {

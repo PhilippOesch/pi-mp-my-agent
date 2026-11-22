@@ -77,6 +77,9 @@ Create your own `settings.json`, `keybindings.json`, `blacklist.json`, and
     "agents": {
         "whitelist": ["code-reviewer", "worker"]
     },
+    "skills": {
+        "whitelist": ["tdd", "refactor"]
+    },
     "readModeToggle": {
         "keybinding": "alt+ctrl+x"
     }
@@ -86,6 +89,13 @@ Create your own `settings.json`, `keybindings.json`, `blacklist.json`, and
 If `agents.whitelist` is empty or omitted, all agents from this package are
 enabled. Agent names correspond to the file names in the `agents/` directory
 (without the `.md` extension).
+
+If `skills.whitelist` is empty or omitted, all skills from this package are
+enabled. Skill names correspond to the frontmatter `name` in each skill's
+`SKILL.md` file (e.g., `tdd`, `refactor`, `create-plan`). Non-whitelisted
+package skills are fully removed: they do not appear in the system prompt and
+`/skill:<name>` commands for them are blocked with a notification. User, project,
+and other-package skills are not affected. Run `/reload` after editing this file.
 
 `readModeToggle.keybinding` replaces the save/yolo mode toggle shortcut
 (default: `ctrl+shift+m`); `/mode` still works. Omit the setting to keep the
