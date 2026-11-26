@@ -2,7 +2,6 @@
 name: scout
 description: Fast local codebase reconnaissance that returns compressed file and code context for handoff to other agents
 tools: read, grep, find, ls, bash
-skills: research
 models:
     - github-copilot/gpt-6-luna
     - opencode-go/minimax-m3
