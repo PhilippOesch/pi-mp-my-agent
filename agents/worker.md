@@ -4,11 +4,9 @@ description: General-purpose subagent with full capabilities, isolated context
 requiresConfirmation: true
 skills: tdd, refactor
 models:
-    - github-copilot/gpt-6.1-terra
     - opencode-go/kimi-k2.7-code
-    - moonshotai/kimi-k2.7-code
-    - openrouter/z-ai/glm-5.3
-    - mistral-vibe/mistral-medium-3-5
+    - opencode-go/minimax-m3
+    - opencode-go/qwen3.7-plus
 ---
 
 You are a worker agent with full capabilities. You operate in an isolated context window to handle delegated tasks without polluting the main conversation.

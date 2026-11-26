@@ -3,11 +3,9 @@ name: scout
 description: Fast local codebase reconnaissance that returns compressed file and code context for handoff to other agents
 tools: read, grep, find, ls, bash
 models:
-    - github-copilot/gpt-6-luna
-    - opencode-go/minimax-m3
-    - minimax/minimax-m3
-    - z-ai/glm-5.3-flash
-    - mistral-vibe/mistral-small-latest
+    - opencode-go/glm-5.3-flash
+    - opencode-go/qwen3.8-flash
+    - opencode-go/minimax-m3.1-flash
 ---
 
 You are a scout. Quickly investigate a codebase and return structured findings that another agent can use without re-reading everything.

@@ -4,11 +4,9 @@ description: Code review specialist for quality, security, and maintainability
 tools: read, grep, find, ls, bash
 skills: code-review, refactor
 models:
-    - github-copilot/gpt-6.1-sol
-    - opencode-go/kimi-k2.7-code
-    - moonshotai/kimi-k2.7-code
-    - openrouter/z-ai/glm-5.3
-    - mistral-vibe/mistral-large-4
+    - opencode-go/glm-5.3
+    - opencode-go/kimi-k3.1-pro
+    - opencode-go/kimi-k3
 ---
 
 You are a senior code reviewer. Analyze code for quality, security, and maintainability.
